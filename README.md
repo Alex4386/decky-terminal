@@ -14,6 +14,11 @@ Here are the cases that Decky Terminal can help you out!
 * Manage your network infrastructure with GNU/Screen   
   <sup>(GNU/Screen installed seperately, RS232 to USB converter sold seperately)</sup>
 
+## TODO
+* Implement on-screen keyboard support
+* multi-instance support (implemented on backend, but not on frontend. yet.)
+* Gamepad support (up/down/left/right for arrow keys, etc.)
+
 ## Build Instructions
 ### Prerequisites
 * Linux Installation <sup>(for prebuilt Decky Loader CLI)</sup> or Rust installation on POSIX Compliant OS <sup>(e.g. macOS)</sup>
