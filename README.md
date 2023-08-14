@@ -38,3 +38,9 @@ If you are using something other POSIX compliant OS (or has docker user-rights p
 ## Footnote
 Valve, If you are reading this. PLEASE integrate proper command line console on game mode.  
 This should be included in the Steam client's developer option.
+
+
+## License
+Distributed under BSD-3-Clause License  
+(`./src/common/xterm_css.tsx` is exempt from BSD-3-Clause License and distributed under MIT License)
+
