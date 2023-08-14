@@ -1,15 +1,17 @@
 {
-  "name": "decky-plugin-template",
+  "name": "decky-terminal",
   "version": "0.0.1",
-  "description": "A template to quickly create decky plugins from scratch, based on TypeScript and webpack",
+  "description": "A long-awaited terminal plugin that turns your steamdeck into Linux battlestation.",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",
     "watch": "rollup -c -w",
+    "local-deploy": "./.vscode/deploy.sh",
+    "build-zip": "./.vscode/build.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SteamDeckHomebrew/decky-plugin-template.git"
+    "url": "git+https://github.com/Alex4386/decky-terminal"
   },
   "keywords": [
     "decky",
@@ -18,12 +20,12 @@
     "steam-deck",
     "deck"
   ],
-  "author": "Jonas Dellinger <jonas@dellinger.dev>",
+  "author": "Alex4386 <psh010209@gmail.com>",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/SteamDeckHomebrew/decky-plugin-template/issues"
+    "url": "https://github.com/Alex4386/decky-terminal/issues"
   },
-  "homepage": "https://github.com/SteamDeckHomebrew/decky-plugin-template#readme",
+  "homepage": "https://github.com/Alex4386/decky-terminal#readme",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-json": "^4.1.0",
@@ -40,7 +42,11 @@
   },
   "dependencies": {
     "decky-frontend-lib": "^3.21.1",
-    "react-icons": "^4.4.0"
+    "react-icons": "^4.4.0",
+    "rollup-plugin-import-css": "^3.3.1",
+    "xterm": "5.0.0",
+    "xterm-addon-attach": "^0.8.0",
+    "xterm-addon-fit": "^0.7.0"
   },
   "pnpm": {
     "peerDependencyRules": {

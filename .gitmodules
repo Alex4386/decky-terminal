@@ -1,0 +1,3 @@
+[submodule "websockets"]
+	path = websockets
+	url = https://github.com/python-websockets/websockets
