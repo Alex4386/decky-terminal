@@ -36,7 +36,7 @@ const Terminal: VFC = () => {
 
     if (result.success) {
       console.log(result.result)
-      const url = new URL('ws://localhost:'+result.result+'/v1/terminals/'+id);
+      const url = new URL('ws://127.0.0.1:'+result.result+'/v1/terminals/'+id);
       const ws = new WebSocket(url);
 
       wsRef.current = ws;

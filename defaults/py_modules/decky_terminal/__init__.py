@@ -5,8 +5,7 @@ from .terminal import Terminal
 from typing import List
 
 class DeckyTerminal:
-    # TODO: Change this to 127.0.0.1
-    _bind_address = "0.0.0.0"
+    _bind_address = "127.0.0.1"
 
     _server_port = -1
     _event_loop = None
@@ -133,7 +132,5 @@ class DeckyTerminal:
 
     # UTILS =====================================================================
     def _get_random_port(self) -> int:
-        return 10000
         return random.randint(10000, 19999)
 
-decky_terminal = DeckyTerminal()
