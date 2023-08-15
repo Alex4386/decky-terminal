@@ -2,7 +2,7 @@ from websockets import server
 import random
 import asyncio
 from .terminal import Terminal
-from typing import List
+from typing import List, Dict
 
 class DeckyTerminal:
     _bind_address = "127.0.0.1"
@@ -34,12 +34,16 @@ class DeckyTerminal:
         if self._terminal_sessions.get(id) is not None:
             terminal: Terminal = self._terminal_sessions[id]
             await terminal.shutdown()
+            del self._terminal_sessions[id]
     
     def get_terminal(self, id) -> Terminal:
         return self._terminal_sessions[id]
     
-    def get_terminals(self) -> List[str]:
+    def get_terminal_ids(self) -> List[str]:
         return self._terminal_sessions.keys()
+    
+    def get_terminals(self) -> Dict[str, Terminal]:
+        return self._terminal_sessions
 
     # SERVER CONTROL ========================================
     async def start_server(self) -> bool:

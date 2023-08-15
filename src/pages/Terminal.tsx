@@ -4,7 +4,7 @@ import {
   SteamSpinner,
   useParams,
   TextField,
-  Button,
+  ButtonItem,
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
@@ -28,7 +28,7 @@ const Terminal: VFC = () => {
   const xtermDiv = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  const fakeInputRef = useRef<TextField | null>(null);
+  const fakeInputRef = useRef<typeof TextField | null>(null);
 
   const fitAddon = new FitAddon()
 
@@ -57,7 +57,7 @@ const Terminal: VFC = () => {
   const openKeyboard = () => {
     console.error('openKeyboard triggered! DIRTY HACK IS NOW OUT IN WILD!');
     
-    const fakeInput = fakeInputRef.current
+    const fakeInput = fakeInputRef.current as any
     console.log('fakeInput', fakeInput)
     if (fakeInput?.m_elInput) {
       fakeInput.m_elInput.click()
@@ -95,6 +95,8 @@ const Terminal: VFC = () => {
       if (wsRef.current) {
         wsRef.current.close()
       }
+
+      setLoaded(false)
     };
   }, []);
 
@@ -107,11 +109,11 @@ const Terminal: VFC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
         <h1>{id}</h1>
         <div style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
-          <Button onClick={openKeyboard}><FaKeyboard /></Button>
+          <ButtonItem onClick={openKeyboard}><FaKeyboard /></ButtonItem>
         </div>
       </div>
       <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} />
-      <div ref={xtermDiv} onClick={openKeyboard} style={{ height: "400px" }}></div>
+      <div ref={xtermDiv} onClick={openKeyboard} style={{ height: "calc(100vh - 3rem)" }}></div>
     </div>
   );
 };

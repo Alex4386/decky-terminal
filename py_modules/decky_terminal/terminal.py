@@ -13,11 +13,27 @@ class Terminal:
     slave_fd: int
 
     subscribers: List[WebSocketServerProtocol] = []
-    buffer: collections.deque = collections.deque([], maxlen=4096)
+    buffer: collections.deque = None
     
     def __init__(self, cmdline: str):
         if cmdline is not None:
             self.cmdline = cmdline
+        self.buffer = collections.deque([], maxlen=4096)
+
+    # SERIALIZE ============================================
+    def serialize(self) -> dict:
+        data = dict(
+            is_started=self._is_process_started(),
+            is_completed=self._is_process_completed(),
+        )
+
+        if self.process is not None:
+            data['pid'] = self.process.pid
+
+            if self.process.returncode is not None:
+                data['exitcode'] = self.process.returncode
+
+        return data
 
     # CONTROL ==============================================
     async def start(self):
@@ -129,6 +145,9 @@ class Terminal:
             return False
         
         return True
+    
+    def _is_process_completed(self):
+        return not self._is_process_alive() and self._is_process_started()
         
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
