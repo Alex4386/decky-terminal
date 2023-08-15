@@ -3,7 +3,8 @@ import {
   Router,
   SteamSpinner,
   useParams,
-  ServerAPI,
+  TextField,
+  Button,
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
@@ -13,6 +14,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import logo from "../../assets/logo.png";
 import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
+import { FaKeyboard } from "react-icons/fa";
 
 const Terminal: VFC = () => {
 
@@ -25,6 +27,8 @@ const Terminal: VFC = () => {
   const xtermRef = useRef<XTermTerminal | null>(null);
   const xtermDiv = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+
+  const fakeInputRef = useRef<TextField | null>(null);
 
   const fitAddon = new FitAddon()
 
@@ -43,15 +47,28 @@ const Terminal: VFC = () => {
 
       const attachAddon = new AttachAddon(ws);
       xtermRef.current?.loadAddon(attachAddon);
-
-      xtermRef.current?.loadAddon(fitAddon);
-      fitAddon.fit()
       
       // Set the loaded state to true after xterm is initialized
       setLoaded(true);
       xtermRef.current?.open(xtermDiv.current as HTMLDivElement);
     }
   };
+
+  const openKeyboard = () => {
+    console.error('openKeyboard triggered! DIRTY HACK IS NOW OUT IN WILD!');
+    
+    const fakeInput = fakeInputRef.current
+    console.log('fakeInput', fakeInput)
+    if (fakeInput?.m_elInput) {
+      fakeInput.m_elInput.click()
+    } else {
+      fakeInput.click()
+    }
+
+    setTimeout(() => {
+      xtermRef.current?.focus()
+    }, 500)
+  }
 
   useEffect(() => {
     if (!loaded) {
@@ -61,10 +78,12 @@ const Terminal: VFC = () => {
         rows: 18,
       });
       xtermRef.current = xterm;
+      xtermRef.current?.loadAddon(fitAddon);
 
       console.log('xterm configured')
       connectIO()
     }
+    fitAddon.fit()
 
     // Clean up function
     return () => {
@@ -79,13 +98,20 @@ const Terminal: VFC = () => {
     };
   }, []);
 
+  const ModifiedTextField = TextField as any
   if (!loaded) return <SteamSpinner />
 
   return (
-    <div style={{ marginTop: "25px", color: "white" }}>
+    <div style={{ padding: ".5rem 1rem", marginTop: "25px", color: "white" }}>
       <XTermCSS />
-      <h1>{id}</h1>
-      <div ref={xtermDiv} style={{ height: "400px" }}></div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
+        <h1>{id}</h1>
+        <div style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
+          <Button onClick={openKeyboard}><FaKeyboard /></Button>
+        </div>
+      </div>
+      <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} />
+      <div ref={xtermDiv} onClick={openKeyboard} style={{ height: "400px" }}></div>
     </div>
   );
 };

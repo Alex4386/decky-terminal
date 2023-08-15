@@ -4,7 +4,7 @@
   "flags": ["debug"],
   "publish": {
     "tags": ["terminal"],
-    "description": "A long-awaited terminal plugin that turns your steamdeck into Linux battlestation.",
+    "description": "A Missing Terminal plugin that turns your Steam Deck into Portable Linux Battlestation.",
     "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
   }
 }

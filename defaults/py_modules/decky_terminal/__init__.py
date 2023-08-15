@@ -18,10 +18,6 @@ class DeckyTerminal:
     def __init__(self) -> None:
         self._event_loop = asyncio.get_event_loop()
 
-    # SINGLETON =============================================
-    def instance(self):
-        return DeckyTerminal()
-
     # GET_FETCH =============================================
     def is_running(self):
         return self._server_port > 0

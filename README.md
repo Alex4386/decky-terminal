@@ -16,9 +16,9 @@ Here are the cases that Decky Terminal can help you out!
 * [Decide NPC's fate](https://www.youtube.com/watch?v=cLT465WM8uw)
 
 ## TODO
-* Implement on-screen keyboard support
 * multi-instance support (implemented on backend, but not on frontend. yet.)
 * Gamepad support (up/down/left/right for arrow keys, etc.)
+* **PROPERLY** implement on-screen keyboard support (currently implemented via workaround)
 
 ## Build Instructions
 ### Prerequisites
