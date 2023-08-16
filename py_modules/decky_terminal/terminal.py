@@ -1,6 +1,7 @@
 import fcntl
 import signal
 import struct
+import subprocess
 import termios
 from typing import List
 import asyncio
@@ -106,6 +107,9 @@ class Terminal:
             stderr=self.slave_fd,
             stdin=self.slave_fd,
             env=self.get_terminal_env(),
+            #creationflags=subprocess.CREATE_NO_WINDOW,
+            cwd=os.getenv("HOME"),
+            pass_fds=(self.master_fd, self.slave_fd),
         )
 
         asyncio.ensure_future(

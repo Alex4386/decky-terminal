@@ -4,6 +4,7 @@ import {
   SteamSpinner,
   useParams,
   TextField,
+  Focusable,
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
@@ -74,6 +75,15 @@ const Terminal: VFC = () => {
       
       // Set the loaded state to true after xterm is initialized
       setLoaded(true);
+      if (fakeInputRef.current) {
+        const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
+        if (inputBox.tabIndex !== -1) {
+          inputBox.tabIndex = -1;
+          inputBox.addEventListener("click", (e) => {
+            setFocusToTerminal();
+          })
+        }
+      }
       xterm?.open(xtermDiv.current as HTMLDivElement);
     }
   };
@@ -104,7 +114,9 @@ const Terminal: VFC = () => {
     } else {
       fakeInput.click()
     }
+  }
 
+  const setFocusToTerminal = () => {
     setTimeout(() => {
       xtermRef.current?.focus()
     }, 500)
@@ -141,7 +153,7 @@ const Terminal: VFC = () => {
     fitAddon.fit()
   });
 
-  const ModifiedTextField = TextField as any
+  const ModifiedTextField = TextField as any;
   if (!loaded) return <SteamSpinner />
 
   return (
@@ -153,8 +165,8 @@ const Terminal: VFC = () => {
           <DialogButton onClick={openKeyboard}><FaKeyboard /></DialogButton>
         </div>
       </div>
-      <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} />
-      <div ref={xtermDiv} onClick={openKeyboard} style={{ height: "calc(100vh - 4.5rem)" }}></div>
+      <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
+      <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ height: "calc(100vh - 4.5rem)" }}></div>
     </div>
   );
 };
