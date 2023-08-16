@@ -4,7 +4,6 @@ import {
   SteamSpinner,
   useParams,
   TextField,
-  ButtonItem,
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
@@ -21,7 +20,7 @@ const Terminal: VFC = () => {
   // I can't find RouteComponentParams :skull:
   const { id } = useParams() as any;
   const [loaded, setLoaded] = useState(false);
-
+  let prevId: string|undefined = undefined;
 
   // Create a ref to hold the xterm instance
   const xtermRef = useRef<XTermTerminal | null>(null);
@@ -32,27 +31,68 @@ const Terminal: VFC = () => {
 
   const fitAddon = new FitAddon()
 
+  const wrappedConnectIO = async () => {
+    try {
+      await connectIO()
+    } catch(e) {
+      console.error(e)
+    }
+  }
+
   const connectIO = async () => {
     console.log('ConnectIO Triggered!');
+    prevId = id;
+
     const serverAPI = TerminalGlobal.getServer()
     const result = await serverAPI.callPluginMethod<{}, number>("get_server_port", {});
-    console.log('result', result)
+    
+    const xterm = xtermRef.current
+    if (xterm) {
+      xterm.onResize((e) => {
+        setWindowSize(e.rows, e.cols);
+      });
+
+      await setWindowSize(xterm.rows, xterm.cols);
+    }
 
     if (result.success) {
-      console.log(result.result)
+      console.log('connectIO', result.result)
+
       const url = new URL('ws://127.0.0.1:'+result.result+'/v1/terminals/'+id);
       const ws = new WebSocket(url);
 
-      wsRef.current = ws;
+      if (wsRef.current !== null) {
+        try {
+          wsRef.current.close()
+        } catch(e) {}
+      }
 
+      wsRef.current = ws;
+      
       const attachAddon = new AttachAddon(ws);
-      xtermRef.current?.loadAddon(attachAddon);
+      xterm?.loadAddon(attachAddon);
       
       // Set the loaded state to true after xterm is initialized
       setLoaded(true);
-      xtermRef.current?.open(xtermDiv.current as HTMLDivElement);
+      xterm?.open(xtermDiv.current as HTMLDivElement);
     }
   };
+
+  const setWindowSize = async (rows: number, cols: number) => {
+    console.log('Setting WindowSize to', rows, cols);
+    const serverAPI = TerminalGlobal.getServer()
+    const result = await serverAPI.callPluginMethod<{
+      id: string,
+      rows: number,
+      cols: number,
+    }, number>("change_terminal_window_size", {
+      id,
+      rows,
+      cols,
+    });
+
+    console.log('setWindowSize', result);
+  }
 
   const openKeyboard = () => {
     console.error('openKeyboard triggered! DIRTY HACK IS NOW OUT IN WILD!');
@@ -71,34 +111,35 @@ const Terminal: VFC = () => {
   }
 
   useEffect(() => {
-    if (!loaded) {
-      // Initialize xterm instance and attach it to a DOM element
-      const xterm = new XTermTerminal({
-        //scrollback: 0,
-        rows: 18,
-      });
-      xtermRef.current = xterm;
-      xtermRef.current?.loadAddon(fitAddon);
+    // Initialize xterm instance and attach it to a DOM element
+    const xterm = new XTermTerminal({
+      //scrollback: 0,
+      rows: 18,
+    });
+    xtermRef.current = xterm;
+    xtermRef.current?.loadAddon(fitAddon);
 
-      console.log('xterm configured')
-      connectIO()
-    }
-    fitAddon.fit()
+    console.log('xterm configured')
+    wrappedConnectIO()
 
     // Clean up function
     return () => {
       // Dispose xterm instance when component is unmounted
       if (xtermRef.current) {
         xtermRef.current.dispose();
+        xtermRef.current = null;
       }
 
       if (wsRef.current) {
         wsRef.current.close()
+        wsRef.current = null;
       }
-
-      setLoaded(false)
     };
-  }, []);
+  }, [ id ]);
+
+  useEffect(() => {
+    fitAddon.fit()
+  });
 
   const ModifiedTextField = TextField as any
   if (!loaded) return <SteamSpinner />
@@ -109,11 +150,11 @@ const Terminal: VFC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
         <h1>{id}</h1>
         <div style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
-          <ButtonItem onClick={openKeyboard}><FaKeyboard /></ButtonItem>
+          <DialogButton onClick={openKeyboard}><FaKeyboard /></DialogButton>
         </div>
       </div>
       <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} />
-      <div ref={xtermDiv} onClick={openKeyboard} style={{ height: "calc(100vh - 3rem)" }}></div>
+      <div ref={xtermDiv} onClick={openKeyboard} style={{ height: "calc(100vh - 4.5rem)" }}></div>
     </div>
   );
 };

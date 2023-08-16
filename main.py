@@ -50,6 +50,16 @@ class Plugin:
         except:
             return False
 
+    async def change_terminal_window_size(self, id, rows: int, cols: int) -> bool:
+        try:
+            terminal = Plugin.decky_terminal.get_terminal(id)
+            if terminal is not None:
+                terminal.change_window_size(rows, cols)
+                return True
+            return False
+        except:
+            return False
+
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
         #decky_plugin.logger.info("Hello World!")

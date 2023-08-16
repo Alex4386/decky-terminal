@@ -1,3 +1,7 @@
+import fcntl
+import signal
+import struct
+import termios
 from typing import List
 import asyncio
 from websockets import WebSocketServerProtocol
@@ -14,6 +18,9 @@ class Terminal:
 
     subscribers: List[WebSocketServerProtocol] = []
     buffer: collections.deque = None
+
+    cols: int = 80
+    rows: int = 24
     
     def __init__(self, cmdline: str):
         if cmdline is not None:
@@ -44,6 +51,21 @@ class Terminal:
         await self.close_subscribers()
         self.subscribers = []
 
+    async def change_window_size(self, rows: int, cols: int):
+        if self._is_process_alive():
+            await self._change_pty_size(rows, cols)
+            await self.process.send_signal(signal.SIGWINCH)
+            await self._write_stdin(b'\x1b[8;%d;%dt' % (rows, cols))
+    
+    async def _change_pty_size(self, rows: int, cols: int):
+        self.rows = rows
+        self.cols = cols
+
+        if self.master_fd is not None:
+            new_size = struct.pack('HHHH', rows, cols, 0, 0)
+            await self._run_async(fcntl.ioctl, self.master_fd, termios.TIOCSWINSZ, new_size)
+            
+
     # WORKERS ==============================================
     async def _process_subscriber(self, ws: WebSocketServerProtocol):
         await ws.send(bytes(self.buffer))
@@ -63,18 +85,27 @@ class Terminal:
             await asyncio.sleep(0)
 
     # PROCESS CONTROL =======================================
+    def get_terminal_env(self):
+        result = dict(**os.environ)
+        result["TERM"] = "xterm-256color"
+        result["PWD"] = result["HOME"]
+        result["SSH_TTY"] = os.ttyname(self.slave_fd)
+        result["LINES"] = str(self.rows)
+        result["COLUMNS"] = str(self.cols)
+
+        return result
+
+
     async def _start_process(self):
         self.master_fd, self.slave_fd = pty.openpty()
-    
+
+        await self._change_pty_size(self.rows, self.cols)
         self.process = await asyncio.create_subprocess_shell(
             self.cmdline,
             stdout=self.slave_fd,
             stderr=self.slave_fd,
             stdin=self.slave_fd,
-            env={
-                **os.environ,
-                "TERM": "xterm-256color",
-            }
+            env=self.get_terminal_env(),
         )
 
         asyncio.ensure_future(
