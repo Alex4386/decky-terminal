@@ -100,7 +100,7 @@ class Terminal:
         self.master_fd, self.slave_fd = pty.openpty()
 
         await self._change_pty_size(self.rows, self.cols)
-        self.process = await asyncio.create_subprocess_shell(
+        self.process = await asyncio.create_subprocess_exec(
             self.cmdline,
             stdout=self.slave_fd,
             stderr=self.slave_fd,
