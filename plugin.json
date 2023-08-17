@@ -1,10 +1,10 @@
 {
   "name": "Decky Terminal",
   "author": "Alex4386",
-  "flags": ["debug"],
+  "flags": [],
   "publish": {
     "tags": ["terminal"],
     "description": "A Missing Terminal plugin that turns your Steam Deck into Portable Linux Battlestation.",
-    "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
+    "image": "https://github.com/Alex4386/decky-terminal/assets/27724108/35fa0f98-1d74-4689-be35-233ef4ed6cd2"
   }
 }
