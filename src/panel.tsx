@@ -14,7 +14,6 @@ import {
   staticClasses,
 } from "decky-frontend-lib";
 import { useState, VFC } from "react";
-import logo from "../assets/logo.png";
 import { FaPlus, FaTimesCircle } from "react-icons/fa";
 import TerminalGlobal from "./common/global";
 

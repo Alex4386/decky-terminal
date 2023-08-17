@@ -4,8 +4,6 @@ import {
   useParams,
 } from "decky-frontend-lib";
 import { VFC } from "react";
-
-import logo from "../../assets/logo.png";
 import XTermCSS from "../common/xterm_css";
 
 const Terminals: VFC = () => {

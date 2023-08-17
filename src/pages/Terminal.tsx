@@ -10,8 +10,6 @@ import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
 import { AttachAddon } from "xterm-addon-attach";
 import { FitAddon } from 'xterm-addon-fit';
-
-import logo from "../../assets/logo.png";
 import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
 import { FaKeyboard } from "react-icons/fa";
