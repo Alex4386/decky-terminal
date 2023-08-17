@@ -34,7 +34,6 @@ If you are using something other POSIX compliant OS (or has docker user-rights p
 1. Resolve pnpm dependencies with `pnpm i` command
 2. Create cli directory on repository root (`mkdir cli`)
 3. Put compiled CLI binary ([Precompiled Linux binary](https://github.com/SteamDeckHomebrew/cli/releases/latest)) at `./cli/decky`
-   - Due to changes for adding support for `py_modules`, Please use the compiled CI binary of [my fork](https://github.com/Alex4386/decky-plugin-cli) at the moment
    - If you are using other POSIX compliant OS, clone the repo and compile with `cargo build`.
    - If you are using Windows, Use WSL2 (Arch Linux preferred) and setup all of prerequisites.
 4. run `pnpm build-zip`
