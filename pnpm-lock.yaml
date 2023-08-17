@@ -21,8 +21,8 @@ dependencies:
     specifier: ^0.8.0
     version: 0.8.0(xterm@5.0.0)
   xterm-addon-fit:
-    specifier: ^0.7.0
-    version: 0.7.0(xterm@5.0.0)
+    specifier: 0.6.0
+    version: 0.6.0(xterm@5.0.0)
 
 devDependencies:
   '@rollup/plugin-commonjs':
@@ -981,8 +981,8 @@ packages:
       xterm: 5.0.0
     dev: false
 
-  /xterm-addon-fit@0.7.0(xterm@5.0.0):
-    resolution: {integrity: sha512-tQgHGoHqRTgeROPnvmtEJywLKoC/V9eNs4bLLz7iyJr1aW/QFzRwfd3MGiJ6odJd9xEfxcW36/xRU47JkD5NKQ==}
+  /xterm-addon-fit@0.6.0(xterm@5.0.0):
+    resolution: {integrity: sha512-9/7A+1KEjkFam0yxTaHfuk9LEvvTSBi0PZmEkzJqgafXPEXL9pCMAVV7rB09sX6ATRDXAdBpQhZkhKj7CGvYeg==}
     peerDependencies:
       xterm: ^5.0.0
     dependencies:

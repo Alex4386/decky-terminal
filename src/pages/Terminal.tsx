@@ -46,13 +46,6 @@ const Terminal: VFC = () => {
     const result = await serverAPI.callPluginMethod<{}, number>("get_server_port", {});
     
     const xterm = xtermRef.current
-    if (xterm) {
-      xterm.onResize((e) => {
-        setWindowSize(e.rows, e.cols);
-      });
-
-      await setWindowSize(xterm.rows, xterm.cols);
-    }
 
     if (result.success) {
       console.log('connectIO', result.result)
@@ -70,9 +63,24 @@ const Terminal: VFC = () => {
       
       const attachAddon = new AttachAddon(ws);
       xterm?.loadAddon(attachAddon);
-      
+
       // Set the loaded state to true after xterm is initialized
       setLoaded(true);
+
+      await xterm?.open(xtermDiv.current as HTMLDivElement);
+      // wait for it!
+      await (new Promise<void>((res) => setTimeout(res, 1)));
+      fitAddon.fit()
+
+      if (xterm) {
+        xterm.onResize((e) => {
+          console.log('Resize triggered to ', xterm)
+          setWindowSize(e.rows, e.cols);
+        });
+
+        await setWindowSize(xterm.rows, xterm.cols);
+      }
+      
       if (fakeInputRef.current) {
         const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
         if (inputBox.tabIndex !== -1) {
@@ -82,7 +90,6 @@ const Terminal: VFC = () => {
           })
         }
       }
-      xterm?.open(xtermDiv.current as HTMLDivElement);
     }
   };
 
@@ -127,7 +134,7 @@ const Terminal: VFC = () => {
       rows: 18,
     });
     xtermRef.current = xterm;
-    xtermRef.current?.loadAddon(fitAddon);
+    xterm.loadAddon(fitAddon);
 
     console.log('xterm configured')
     wrappedConnectIO()
@@ -148,7 +155,9 @@ const Terminal: VFC = () => {
   }, [ id ]);
 
   useEffect(() => {
-    fitAddon.fit()
+    if (xtermRef.current) {
+      fitAddon.fit()
+    }
   });
 
   const ModifiedTextField = TextField as any;
@@ -164,7 +173,7 @@ const Terminal: VFC = () => {
         </div>
       </div>
       <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
-      <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ height: "calc(100vh - 4.5rem)" }}></div>
+      <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ height: "calc(100vh - 11rem)" }}></div>
     </div>
   );
 };
