@@ -110,7 +110,7 @@ const SidePanel: VFC = ({}) => {
         {
           result.map((terminal) => 
             <Field>
-              <Focusable style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+              <Focusable style={{ margin: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                 <DialogButton
                   onClick={() => {
                     Router.CloseSideMenus();
