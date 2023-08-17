@@ -54,7 +54,7 @@ class Plugin:
         try:
             terminal = Plugin.decky_terminal.get_terminal(id)
             if terminal is not None:
-                terminal.change_window_size(rows, cols)
+                await terminal.change_window_size(rows, cols)
                 return True
             return False
         except:

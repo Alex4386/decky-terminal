@@ -66,6 +66,10 @@ class Terminal:
             new_size = struct.pack('HHHH', rows, cols, 0, 0)
             await self._run_async(fcntl.ioctl, self.master_fd, termios.TIOCSWINSZ, new_size)
             
+        if self.slave_fd is not None:
+            new_size = struct.pack('HHHH', rows, cols, 0, 0)
+            await self._run_async(fcntl.ioctl, self.slave_fd, termios.TIOCSWINSZ, new_size)
+            
 
     # WORKERS ==============================================
     async def _process_subscriber(self, ws: WebSocketServerProtocol):
@@ -99,30 +103,23 @@ class Terminal:
 
     async def _start_process(self):
         self.master_fd, self.slave_fd = pty.openpty()
-        self._set_pty_settings()
+        #self._set_pty_settings()
 
         await self._change_pty_size(self.rows, self.cols)
         self.process = await asyncio.create_subprocess_exec(
             self.cmdline,
+            preexec_fn=os.setsid,
             stdout=self.slave_fd,
             stderr=self.slave_fd,
             stdin=self.slave_fd,
             env=self.get_terminal_env(),
             #creationflags=subprocess.CREATE_NO_WINDOW,
             cwd=os.getenv("HOME"),
-            pass_fds=(self.master_fd, self.slave_fd),
         )
 
         asyncio.ensure_future(
             self._read_output_loop()
         )
-
-    async def _set_pty_settings(self):
-        new_attributes = termios.tcgetattr(self.slave_fd)
-
-        # Set the terminal to raw mode (typewriter-like behavior)
-        new_attributes[3] &= ~(termios.ICANON | termios.ECHO)
-        termios.tcsetattr(self.slave_fd, termios.TCSANOW, new_attributes)
 
     def _kill_process(self):
         if self._is_process_alive():
