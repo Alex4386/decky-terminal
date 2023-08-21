@@ -97,6 +97,7 @@ class Terminal:
         result["SSH_TTY"] = os.ttyname(self.slave_fd)
         result["LINES"] = str(self.rows)
         result["COLUMNS"] = str(self.cols)
+        result["XDG_RUNTIME_DIR"] = "/run/user/"+str(os.getuid())
 
         return result
 
@@ -195,7 +196,7 @@ class Terminal:
         await self._run_async(os.fsync, self.master_fd)
     
     async def _read_output(self) -> bytes:
-        output = await self._run_async(os.read, self.master_fd, 50)
+        output = await self._run_async(os.read, self.master_fd, 500)
         if len(output) > 0:
             self._put_buffer(output)
             await self.broadcast_subscribers(output)

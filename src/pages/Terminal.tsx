@@ -5,6 +5,7 @@ import {
   useParams,
   TextField,
   Focusable,
+  Field,
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
@@ -12,13 +13,14 @@ import { AttachAddon } from "xterm-addon-attach";
 import { FitAddon } from 'xterm-addon-fit';
 import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
-import { FaKeyboard } from "react-icons/fa";
+import { FaExpand, FaKeyboard } from "react-icons/fa";
 
 const Terminal: VFC = () => {
 
   // I can't find RouteComponentParams :skull:
   const { id } = useParams() as any;
   const [loaded, setLoaded] = useState(false);
+  const [fullScreen, setFullScreen] = useState(false);
   let prevId: string|undefined = undefined;
 
   // Create a ref to hold the xterm instance
@@ -27,8 +29,6 @@ const Terminal: VFC = () => {
   const wsRef = useRef<WebSocket | null>(null);
 
   const fakeInputRef = useRef<typeof TextField | null>(null);
-
-  const fitAddon = new FitAddon()
 
   const wrappedConnectIO = async () => {
     try {
@@ -70,6 +70,11 @@ const Terminal: VFC = () => {
       await xterm?.open(xtermDiv.current as HTMLDivElement);
       // wait for it!
       await (new Promise<void>((res) => setTimeout(res, 1)));
+
+
+      const fitAddon = new FitAddon()
+      xterm?.loadAddon(fitAddon);
+
       fitAddon.fit()
 
       if (xterm) {
@@ -131,11 +136,9 @@ const Terminal: VFC = () => {
     // Initialize xterm instance and attach it to a DOM element
     const xterm = new XTermTerminal({
       //scrollback: 0,
-      rows: 18,
     });
     xtermRef.current = xterm;
-    xterm.loadAddon(fitAddon);
-
+    
     console.log('xterm configured')
     wrappedConnectIO()
 
@@ -151,29 +154,53 @@ const Terminal: VFC = () => {
         wsRef.current.close()
         wsRef.current = null;
       }
+
+      setFullScreen(false)
     };
   }, [ id ]);
 
-  useEffect(() => {
-    if (xtermRef.current) {
-      fitAddon.fit()
-    }
-  });
+  const startFullScreen = () => {
+    setFullScreen(true);
+    //handleResize()
+    setTimeout(() => {
+      try {
+        console.log('triggering fit!')
+        if (xtermRef.current) {
+          const xterm = xtermRef.current
+          const fitAddon = new FitAddon()
+          xtermRef.current.loadAddon(fitAddon)
+          const res = fitAddon.proposeDimensions();
+          if (res?.rows && res.cols) {
+            xterm.resize(res.cols - 3, res.rows - 1)
+          }
+        }
+        console.log('triggered fit!', xtermRef.current?.cols, xtermRef.current?.rows)
+      } catch(e) {
+        console.error(e)
+      }
+    }, 0);
+  }
 
   const ModifiedTextField = TextField as any;
   if (!loaded) return <SteamSpinner />
 
   return (
-    <div style={{ padding: ".5rem 1rem", marginTop: "25px", color: "white" }}>
-      <XTermCSS />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
-        <h1>{id}</h1>
-        <div style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
-          <DialogButton onClick={openKeyboard}><FaKeyboard /></DialogButton>
-        </div>
+    <div style={{ paddingTop: "2.5rem", color: "white" }}>
+      <div style={{padding: fullScreen ? "0" : "0 1rem", }}>
+        <XTermCSS />
+        {
+          (!fullScreen) ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
+            <h1 style={{ margin: '1rem 0'}}>{id}</h1>
+            <Focusable style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
+              <DialogButton onClick={openKeyboard}><FaKeyboard /></DialogButton>
+              <DialogButton onClick={startFullScreen}><FaExpand /></DialogButton>
+            </Focusable>
+          </div> : <div></div>
+        }
+        
+        <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
+        <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ background: '#000', padding: '0', height: fullScreen ? "calc(100vh - 5rem)" : "calc(100vh - 11rem)" }}></div>
       </div>
-      <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
-      <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ height: "calc(100vh - 11rem)" }}></div>
     </div>
   );
 };
