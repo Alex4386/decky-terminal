@@ -11,6 +11,8 @@ import pty
 import os
 
 class Terminal:
+    _sync_size: int = 1000
+
     cmdline: str = "/bin/bash"
     process: asyncio.subprocess.Process = None
 
@@ -196,7 +198,7 @@ class Terminal:
         await self._run_async(os.fsync, self.master_fd)
     
     async def _read_output(self) -> bytes:
-        output = await self._run_async(os.read, self.master_fd, 500)
+        output = await self._run_async(os.read, self.master_fd, self._sync_size)
         if len(output) > 0:
             self._put_buffer(output)
             await self.broadcast_subscribers(output)

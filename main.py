@@ -1,7 +1,7 @@
 import sys
 import asyncio
 import random
-from typing import List
+from typing import List, Optional
 
 try:
     import decky_plugin
@@ -35,6 +35,13 @@ class Plugin:
             ))
         
         return output
+
+    async def get_terminal(self, id: str) -> Optional[dict]:
+        terminal = Plugin.decky_terminal.get_terminal(id)
+        if terminal is None:
+            return None
+        
+        return terminal.serialize()
 
     async def create_terminal(self, id = None) -> bool:
         if id is None:

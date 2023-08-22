@@ -43,6 +43,15 @@ const Terminal: VFC = () => {
     prevId = id;
 
     const serverAPI = TerminalGlobal.getServer()
+    const terminalResult = await serverAPI.callPluginMethod<{
+      id: string
+    }, number>("get_terminal", { id });
+    if (terminalResult.success) {
+      if (terminalResult.result === null) {
+        history.back();
+      }
+    }
+
     const result = await serverAPI.callPluginMethod<{}, number>("get_server_port", {});
     
     const xterm = xtermRef.current
@@ -60,6 +69,9 @@ const Terminal: VFC = () => {
       }
 
       wsRef.current = ws;
+      ws.onclose = () => {
+        xterm?.write("--- Terminal Disconnected ---")
+      }
       
       const attachAddon = new AttachAddon(ws);
       xterm?.loadAddon(attachAddon);
