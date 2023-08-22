@@ -42,19 +42,21 @@ const Terminal: VFC = () => {
     console.log('ConnectIO Triggered!');
     prevId = id;
 
+    const xterm = xtermRef.current
+
     const serverAPI = TerminalGlobal.getServer()
     const terminalResult = await serverAPI.callPluginMethod<{
       id: string
     }, number>("get_terminal", { id });
     if (terminalResult.success) {
       if (terminalResult.result === null) {
+        xterm?.write("--- Terminal Not Found ---");
         history.back();
       }
     }
 
     const result = await serverAPI.callPluginMethod<{}, number>("get_server_port", {});
     
-    const xterm = xtermRef.current
 
     if (result.success) {
       console.log('connectIO', result.result)
