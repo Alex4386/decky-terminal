@@ -2,7 +2,7 @@ from websockets import server
 import random
 import asyncio
 from .terminal import Terminal
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 class DeckyTerminal:
     _bind_address = "127.0.0.1"
@@ -36,8 +36,8 @@ class DeckyTerminal:
             await terminal.shutdown()
             del self._terminal_sessions[id]
     
-    def get_terminal(self, id) -> Terminal:
-        return self._terminal_sessions[id]
+    def get_terminal(self, id) -> Optional[Terminal]:
+        return self._terminal_sessions.get(id)
     
     def get_terminal_ids(self) -> List[str]:
         return self._terminal_sessions.keys()

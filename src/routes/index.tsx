@@ -1,25 +1,19 @@
 import { RouterHook, ServerAPI } from "decky-frontend-lib";
-import DeckyPluginRouterTest from "../pages/Test";
+import Settings from "../pages/Settings";
 import Terminal from "../pages/Terminal";
-import Terminals from "../pages/Terminals";
 import { VFC } from "react";
 
 export function registerRoutes(routerHook: RouterHook) {
-    routerHook.addRoute('/terminals', Terminals, {
-        exact: true,
-    });
-
     routerHook.addRoute('/terminals/:id', Terminal, {
         exact: true,
     });
 
-    routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
+    routerHook.addRoute("/decky-terminal/settings", Settings, {
         exact: true,
     });
 }
 
 export function unregisterRoutes(routerHook: RouterHook) {
-    routerHook.removeRoute('/terminals');
     routerHook.removeRoute('/terminals/:id');
-    routerHook.removeRoute('/decky-plugin-test');
+    routerHook.removeRoute('/decky-terminal/settings');
 }

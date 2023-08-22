@@ -1,10 +1,11 @@
 import {
   DialogButton,
-  Router,
+  GamepadEvent,
   SteamSpinner,
   useParams,
   TextField,
   Focusable,
+  GamepadButton,
   Field,
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
@@ -13,7 +14,7 @@ import { AttachAddon } from "xterm-addon-attach";
 import { FitAddon } from 'xterm-addon-fit';
 import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
-import { FaExpand, FaKeyboard } from "react-icons/fa";
+import { FaExpand, FaGamepad, FaKeyboard, FaTimesCircle } from "react-icons/fa";
 
 const Terminal: VFC = () => {
 
@@ -21,6 +22,7 @@ const Terminal: VFC = () => {
   const { id } = useParams() as any;
   const [loaded, setLoaded] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
+  const [useGamepad, setUseGamepad] = useState(false);
   let prevId: string|undefined = undefined;
 
   // Create a ref to hold the xterm instance
@@ -56,8 +58,6 @@ const Terminal: VFC = () => {
     }
 
     const result = await serverAPI.callPluginMethod<{}, number>("get_server_port", {});
-    
-
     if (result.success) {
       console.log('connectIO', result.result)
 
@@ -129,8 +129,6 @@ const Terminal: VFC = () => {
   }
 
   const openKeyboard = () => {
-    console.error('openKeyboard triggered! DIRTY HACK IS NOW OUT IN WILD!');
-    
     const fakeInput = fakeInputRef.current as any
     console.log('fakeInput', fakeInput)
     if (fakeInput?.m_elInput) {
@@ -195,19 +193,55 @@ const Terminal: VFC = () => {
     }, 0);
   }
 
+  const gamepadHandler = (evt: GamepadEvent) => {
+    if (useGamepad || fullScreen) {
+      console.log('gamepadEvent', evt);
+
+      let command: string | undefined = undefined;
+      switch (evt.detail.button) {
+        case GamepadButton.DIR_UP:
+          command = '\x1b[A';
+          break;
+        case GamepadButton.DIR_DOWN:
+          command = '\x1b[B';
+          break;
+        case GamepadButton.DIR_RIGHT:
+          command = '\x1b[C';
+          break;
+        case GamepadButton.DIR_LEFT:
+          command = '\x1b[D';
+          break;
+      }
+
+      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED && command) {
+        wsRef.current.send(command)
+
+        // refocus xterm
+        if (useGamepad && !fullScreen) {
+          setTimeout(() => {
+            if (xtermRef.current) {
+              xtermRef.current.focus()
+            }
+          }, 100)
+        }
+      }
+    }
+  }
+
   const ModifiedTextField = TextField as any;
   if (!loaded) return <SteamSpinner />
 
   return (
-    <div style={{ paddingTop: "2.5rem", color: "white" }}>
+    <Focusable noFocusRing={true} onGamepadDirection={gamepadHandler} style={{ paddingTop: "2.5rem", color: "white" }}>
       <div style={{padding: fullScreen ? "0" : "0 1rem", }}>
         <XTermCSS />
         {
           (!fullScreen) ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
             <h1 style={{ margin: '1rem 0'}}>{id}</h1>
             <Focusable style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
-              <DialogButton onClick={openKeyboard}><FaKeyboard /></DialogButton>
-              <DialogButton onClick={startFullScreen}><FaExpand /></DialogButton>
+              <DialogButton style={{ minWidth: '1rem' }} onClick={() => setUseGamepad(!useGamepad)}>{!useGamepad ? <FaGamepad /> : <FaTimesCircle />}</DialogButton>
+              <DialogButton style={{ minWidth: '1rem' }} onClick={openKeyboard}><FaKeyboard /></DialogButton>
+              <DialogButton style={{ minWidth: '1rem' }} onClick={startFullScreen}><FaExpand /></DialogButton>
             </Focusable>
           </div> : <div></div>
         }
@@ -215,7 +249,7 @@ const Terminal: VFC = () => {
         <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
         <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ background: '#000', padding: '0', height: fullScreen ? "calc(100vh - 5rem)" : "calc(100vh - 11rem)" }}></div>
       </div>
-    </div>
+    </Focusable>
   );
 };
 

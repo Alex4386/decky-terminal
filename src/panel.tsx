@@ -14,7 +14,7 @@ import {
   staticClasses,
 } from "decky-frontend-lib";
 import { useState, VFC } from "react";
-import { FaPlus, FaTimesCircle } from "react-icons/fa";
+import { FaCogs, FaPlus, FaTimesCircle } from "react-icons/fa";
 import TerminalGlobal from "./common/global";
 
 // interface AddMethodArgs {
@@ -97,19 +97,28 @@ const SidePanel: VFC = ({}) => {
   });
 
   return <div style={{ boxSizing: 'border-box', padding: '0 .5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-      <DialogButton onClick={createTerminal}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem'}}>
-          <FaPlus />
-          <span>Add Terminal</span>
-        </div></DialogButton>
-    </div>
+    <Field childrenLayout="inline" childrenContainerWidth="max" highlightOnFocus={false}>
+      <Focusable style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+        <DialogButton onClick={createTerminal}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem'}}>
+            <FaPlus />
+            <span>Add Terminal</span>
+          </div>
+        </DialogButton>
+        <DialogButton style={{ minWidth: '0', width: '50px', padding: '10px' }} onClick={() => {
+          Router.CloseSideMenus();
+          Router.Navigate("/decky-terminal/settings");
+        }}>
+          <FaCogs />
+        </DialogButton>
+      </Focusable>
+    </Field>
     <PanelSection title="Active Terminals">
       <PanelSectionRow>
         {
           result.map((terminal) => 
-            <Field>
-              <Focusable style={{ margin: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+            <Field childrenLayout="inline" childrenContainerWidth="max">
+              <Focusable style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
                 <DialogButton
                   onClick={() => {
                     Router.CloseSideMenus();
@@ -128,7 +137,7 @@ const SidePanel: VFC = ({}) => {
                     justifyContent: 'center',
                     alignItems: 'center',
                     padding: '10px',
-                    maxWidth: '40px',
+                    width: '50px', 
                     minWidth: 'auto',
                     marginLeft: '.5em',
                   }}
