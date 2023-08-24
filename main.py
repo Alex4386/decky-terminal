@@ -50,6 +50,15 @@ class Plugin:
         Plugin.decky_terminal.create_terminal(id)
         return True
 
+    async def get_shells(self) -> str:
+        return Plugin.decky_terminal.get_shells()
+
+    async def get_default_shell(self) -> str:
+        return Plugin.decky_terminal.get_default_shell()
+
+    async def set_default_shell(self, shell: str) -> bool:
+        return Plugin.decky_terminal.set_default_shell(shell)
+
     async def remove_terminal(self, id) -> bool:
         try:
             await Plugin.decky_terminal.remove_terminal(id)

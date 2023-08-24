@@ -1,8 +1,13 @@
+from decky_plugin import DECKY_PLUGIN_DIR
 from websockets import server
 import random
 import asyncio
 from .terminal import Terminal
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional, TypeVar, Callable
+import platform
+import json
+from .common import Common
+import os
 
 class DeckyTerminal:
     _bind_address = "127.0.0.1"
@@ -25,8 +30,82 @@ class DeckyTerminal:
     def get_server_port(self):
         return self._server_port
 
+    # GET_SHELL =============================================
+    async def get_shells(self) -> List[str]:
+        if platform.system() == 'Windows':
+            return ["powershell", "cmd"]
+        else:
+            try:
+                data = await Common.read_file("/etc/shells")
+                if data is None:
+                    raise IOError()
+                
+                shells = data.splitlines()
+                if len(shells) < 1:
+                    return ["/bin/sh"]
+                
+                return shells
+            except:
+                return ["/bin/sh"]
+ 
+    # CONFIG ================================================
+    def get_config_filename(self) -> str:
+        return DECKY_PLUGIN_DIR+os.sep+"config.json"
+    
+    async def get_config(self) -> dict:
+        config = await self._get_config()
+        if config is None:
+            config = dict(
+                __version__=1,
+            )
+            await self._write_config(config)
+
+        return config
+
+    async def append_config(self, new_config: Dict[str, Any]) -> bool:
+        prev_config = await self._get_config()
+        if prev_config is None:
+            prev_config = dict(
+                __version__=1,
+            )
+        
+        config = Common.merge_dict(prev_config, new_config)
+        return await self._write_config(config)
+
+    async def get_default_shell(self) -> str:
+        config = await self.get_config()
+
+        if config is None:
+            return self.get_shells()[0]
+        
+        shell = config.get('default_shell')
+        if shell is None:
+            return self.get_shells()[0]
+
+        return shell
+    
+    async def set_default_shell(self, shell: str) -> bool:
+        return await self.append_config(dict( default_shell=shell ))
+ 
+    # CONFIG - INTERNAL =======================================
+    async def _get_config(self) -> Optional[dict]:
+        try:
+            data = await Common.read_file(self.get_config_filename())
+            if data is None:
+                raise IOError()
+            
+            return json.loads(data)
+        except IOError:
+            return None
+        
+    async def _write_config(self, config: dict) -> bool:
+        return await Common.write_file(self.get_config_filename(), json.dumps(config))
+
     # TERMINAL CREATION =====================================
-    def create_terminal(self, id: str, cmdline: str = "/bin/bash"):
+    def create_terminal(self, id: str, cmdline: Optional[str]):
+        if cmdline is None:
+            cmdline = self.get_default_shell()
+
         if self._terminal_sessions.get(id) is None:
             self._terminal_sessions[id] = Terminal(cmdline)
     

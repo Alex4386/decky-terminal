@@ -9,6 +9,7 @@ from websockets import WebSocketServerProtocol
 import collections
 import pty
 import os
+from .common import Common
 
 class Terminal:
     _sync_size: int = 1000
@@ -66,11 +67,11 @@ class Terminal:
 
         if self.master_fd is not None:
             new_size = struct.pack('HHHH', rows, cols, 0, 0)
-            await self._run_async(fcntl.ioctl, self.master_fd, termios.TIOCSWINSZ, new_size)
+            await Common._run_async(fcntl.ioctl, self.master_fd, termios.TIOCSWINSZ, new_size)
             
         if self.slave_fd is not None:
             new_size = struct.pack('HHHH', rows, cols, 0, 0)
-            await self._run_async(fcntl.ioctl, self.slave_fd, termios.TIOCSWINSZ, new_size)
+            await Common._run_async(fcntl.ioctl, self.slave_fd, termios.TIOCSWINSZ, new_size)
             
 
     # WORKERS ==============================================
@@ -194,11 +195,11 @@ class Terminal:
         
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
-        await self._run_async(os.write, self.master_fd, input)
-        await self._run_async(os.fsync, self.master_fd)
+        await Common._run_async(os.write, self.master_fd, input)
+        await Common._run_async(os.fsync, self.master_fd)
     
     async def _read_output(self) -> bytes:
-        output = await self._run_async(os.read, self.master_fd, self._sync_size)
+        output = await Common._run_async(os.read, self.master_fd, self._sync_size)
         if len(output) > 0:
             self._put_buffer(output)
             await self.broadcast_subscribers(output)
@@ -217,10 +218,3 @@ class Terminal:
     def _put_buffer(self, chars: bytes):
         for i in chars:
             self.buffer.append(i)
-
-    async def _run_async(self, fun, *args):
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, fun, *args)
-
-        
-
