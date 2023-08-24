@@ -1,6 +1,6 @@
 import {
     Dropdown,
-    Focusable, SteamSpinner, staticClasses,
+    Focusable, SteamSpinner, TextField, staticClasses,
   } from "decky-frontend-lib";
   import { VFC, useState } from "react";
 import TerminalGlobal from "../../common/global";
@@ -25,15 +25,43 @@ import TerminalGlobal from "../../common/global";
             setConfig(config.result)
         }
     }
+
+    const appendConfig = async (config: Record<string, any>) => {
+        const serverAPI = TerminalGlobal.getServer()
+        const configApplied = await serverAPI.callPluginMethod<{
+            config: Record<string, any>
+        }, string[]>("get_config", {
+            config,
+        });
+
+        if (configApplied.success) {
+            getConfig()
+        }
+    }
+
     const setShell = async (shell: string) => {
         const serverAPI = TerminalGlobal.getServer()
-        const configured = await serverAPI.callPluginMethod<{}, string[]>("set_default_shell", { shell });
+        const configured = await serverAPI.callPluginMethod<{
+            shell: string
+        }, string[]>("set_default_shell", { shell });
         if (configured.success) {
             setConfig({
                 ...config,
                 default_shell: shell,
             })
         }
+    }
+
+    const setFont = async (fontFamily: string) => {
+        await appendConfig({
+            font_family: fontFamily,
+        })
+    }
+
+    const setFontSize = async (fontSize: number) => {
+        await appendConfig({
+            font_size: fontSize,
+        })
     }
 
     useState(() => {
@@ -60,6 +88,31 @@ import TerminalGlobal from "../../common/global";
                         selectedOption={config?.default_shell ?? "/bin/bash"}
                         onChange={(e) => {setShell(e.data)}}
                         rgOptions={shells.map((n) => ({ label: n, data: n }))} />
+                </div>
+            </Focusable>
+            <Focusable
+                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                    <div className={staticClasses.Text}>Font Family</div>
+                    <div className={staticClasses.Label}>Change the font of the terminal</div>
+                </div>
+                <div style={{ minWidth: '150px' }}>
+                    <TextField
+                        disabled={false}
+                        onChange={(e) => {setFont(e.target.value)}} />
+                </div>
+            </Focusable>
+            <Focusable
+                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                    <div className={staticClasses.Text}>Font Size</div>
+                    <div className={staticClasses.Label}>Change the font size of the terminal</div>
+                </div>
+                <div style={{ minWidth: '150px' }}>
+                    <TextField
+                        disabled={false}
+                        mustBeNumeric={true}
+                        onChange={(e) => {!isNaN(parseInt(e.target.value)) ? setFontSize(parseInt(e.target.value)) : undefined}} />
                 </div>
             </Focusable>
         </Focusable>

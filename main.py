@@ -49,6 +49,12 @@ class Plugin:
         
         Plugin.decky_terminal.create_terminal(id)
         return True
+    
+    async def get_config(self) -> str:
+        return Plugin.decky_terminal.get_config()
+    
+    async def append_config(self, config: dict) -> str:
+        return Plugin.decky_terminal.append_config(config)
 
     async def get_shells(self) -> str:
         return Plugin.decky_terminal.get_shells()
