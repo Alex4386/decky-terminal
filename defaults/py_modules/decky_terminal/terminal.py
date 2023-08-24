@@ -25,6 +25,10 @@ class Terminal:
 
     cols: int = 80
     rows: int = 24
+
+    title: str = ""
+
+    _title_cache: bytes = b""
     
     def __init__(self, cmdline: str):
         if cmdline is not None:
@@ -43,6 +47,10 @@ class Terminal:
 
             if self.process.returncode is not None:
                 data['exitcode'] = self.process.returncode
+
+        if self.title is not None or self.title != '':
+            if not self.title.isspace():
+                data['title'] = self.title
 
         return data
 
@@ -218,3 +226,20 @@ class Terminal:
     def _put_buffer(self, chars: bytes):
         for i in chars:
             self.buffer.append(i)
+        self._process_title(self, chars)
+
+    def _process_title(self, chars: bytes):
+        try:
+            idx = chars.rindex(b"\x21]")
+            
+            validity_check = (48 <= chars[idx + 2] <= 50) and (chars[idx + 3] == 59)
+            if not validity_check:
+                return
+            
+            try:
+                final_idx = chars.rindex(b"\x07", idx + 4)
+                self.title = str(chars[idx + 4:final_idx])
+            except:
+                pass
+        except:
+            pass
