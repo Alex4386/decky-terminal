@@ -1,4 +1,4 @@
-from decky_plugin import DECKY_PLUGIN_DIR
+from decky_plugin import DECKY_PLUGIN_SETTINGS_DIR
 from websockets import server
 import random
 import asyncio
@@ -50,7 +50,7 @@ class DeckyTerminal:
  
     # CONFIG ================================================
     def get_config_filename(self) -> str:
-        return DECKY_PLUGIN_DIR+os.sep+"config.json"
+        return DECKY_PLUGIN_SETTINGS_DIR+os.sep+"config.json"
     
     async def get_config(self) -> dict:
         config = await self._get_config()
@@ -76,11 +76,11 @@ class DeckyTerminal:
         config = await self.get_config()
 
         if config is None:
-            return self.get_shells()[0]
+            return await self.get_shells()[0]
         
         shell = config.get('default_shell')
         if shell is None:
-            return self.get_shells()[0]
+            return await self.get_shells()[0]
 
         return shell
     
@@ -102,9 +102,9 @@ class DeckyTerminal:
         return await Common.write_file(self.get_config_filename(), json.dumps(config))
 
     # TERMINAL CREATION =====================================
-    def create_terminal(self, id: str, cmdline: Optional[str]):
+    async def create_terminal(self, id: str, cmdline: Optional[str] = None):
         if cmdline is None:
-            cmdline = self.get_default_shell()
+            cmdline = await self.get_default_shell()
 
         if self._terminal_sessions.get(id) is None:
             self._terminal_sessions[id] = Terminal(cmdline)
@@ -136,7 +136,7 @@ class DeckyTerminal:
         if not self.is_running():
             return False
         
-        self._kill_all_terminals()
+        await self._kill_all_terminals()
         self._server_cleanup()
         self._server_port = -1
 

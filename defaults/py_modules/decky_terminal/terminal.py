@@ -3,7 +3,7 @@ import signal
 import struct
 import subprocess
 import termios
-from typing import List
+from typing import List, Optional
 import asyncio
 from websockets import WebSocketServerProtocol
 import collections
@@ -14,7 +14,7 @@ from .common import Common
 class Terminal:
     _sync_size: int = 1000
 
-    cmdline: str = "/bin/bash"
+    cmdline: Optional[str]
     process: asyncio.subprocess.Process = None
 
     master_fd: int
@@ -35,6 +35,13 @@ class Terminal:
             self.cmdline = cmdline
         self.buffer = collections.deque([], maxlen=4096)
 
+    def _calculate_sync_size(self):
+        min = self.cols * self.rows
+        if min < 1000:
+            return 1000
+        else:
+            return min
+
     # SERIALIZE ============================================
     def serialize(self) -> dict:
         data = dict(
@@ -48,7 +55,7 @@ class Terminal:
             if self.process.returncode is not None:
                 data['exitcode'] = self.process.returncode
 
-        if self.title is not None or self.title != '':
+        if self.title is not None and self.title != '':
             if not self.title.isspace():
                 data['title'] = self.title
 
@@ -207,7 +214,7 @@ class Terminal:
         await Common._run_async(os.fsync, self.master_fd)
     
     async def _read_output(self) -> bytes:
-        output = await Common._run_async(os.read, self.master_fd, self._sync_size)
+        output = await Common._run_async(os.read, self.master_fd, self._calculate_sync_size())
         if len(output) > 0:
             self._put_buffer(output)
             await self.broadcast_subscribers(output)
@@ -226,7 +233,7 @@ class Terminal:
     def _put_buffer(self, chars: bytes):
         for i in chars:
             self.buffer.append(i)
-        self._process_title(self, chars)
+        self._process_title(chars)
 
     def _process_title(self, chars: bytes):
         try:

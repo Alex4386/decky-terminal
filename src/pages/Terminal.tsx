@@ -23,6 +23,8 @@ const Terminal: VFC = () => {
   const [loaded, setLoaded] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [useGamepad, setUseGamepad] = useState(false);
+  const [title, setTitle] = useState(id);
+  const [config, setConfig] = useState<Record<string, any> | null>(null);
   let prevId: string|undefined = undefined;
 
   // Create a ref to hold the xterm instance
@@ -40,6 +42,19 @@ const Terminal: VFC = () => {
     }
   }
 
+  const getConfig = async (): Promise<Record<string, any>|undefined> => {
+    const serverAPI = TerminalGlobal.getServer()
+    const config = await serverAPI.callPluginMethod<{}, string[]>("get_config", {});
+    console.log('getConfig', config);
+    if (config.success) {
+        setConfig(config.result)
+
+        return config.result;
+    }
+
+    return;
+  }
+
   const connectIO = async () => {
     console.log('ConnectIO Triggered!');
     prevId = id;
@@ -47,6 +62,27 @@ const Terminal: VFC = () => {
     const xterm = xtermRef.current
 
     const serverAPI = TerminalGlobal.getServer()
+    if (!config) {
+      const localConfig = await getConfig()
+      console.log('config', config, 'localConfig', localConfig);
+      if (localConfig && xterm) {
+        if (localConfig.__version__ === 1) {
+          if (localConfig.font_family?.trim()) {
+            xterm.options.fontFamily = localConfig.font_family;
+          }
+
+          if (localConfig.font_size) {
+            const fs = parseInt(localConfig.font_size);
+            if (!isNaN(fs) && fs > 0) {
+              xterm.options.fontSize = fs;
+            }
+          }
+
+          console.log('xterm.options', xterm.options)
+        }
+      }
+    }
+
     const terminalResult = await serverAPI.callPluginMethod<{
       id: string
     }, number>("get_terminal", { id });
@@ -54,6 +90,10 @@ const Terminal: VFC = () => {
       if (terminalResult.result === null) {
         xterm?.write("--- Terminal Not Found ---");
         history.back();
+      }
+      if ((terminalResult.result as any)?.title) {
+        const title = (terminalResult.result as any)?.title;
+        setTitle(title)
       }
     }
 
@@ -72,7 +112,13 @@ const Terminal: VFC = () => {
 
       wsRef.current = ws;
       ws.onclose = () => {
-        xterm?.write("--- Terminal Disconnected ---")
+        xterm?.write("\n--- Terminal Disconnected ---")
+      }
+
+      if (xterm) {
+        xterm.onTitleChange((title) => {
+          setTitle(title)
+        })
       }
       
       const attachAddon = new AttachAddon(ws);
@@ -237,7 +283,7 @@ const Terminal: VFC = () => {
         <XTermCSS />
         {
           (!fullScreen) ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
-            <h1 style={{ margin: '1rem 0'}}>{id}</h1>
+            <h1 style={{ margin: '1rem 0'}}>{title}</h1>
             <Focusable style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
               <DialogButton style={{ minWidth: '1rem' }} onClick={() => setUseGamepad(!useGamepad)}>{!useGamepad ? <FaGamepad /> : <FaTimesCircle />}</DialogButton>
               <DialogButton style={{ minWidth: '1rem' }} onClick={openKeyboard}><FaKeyboard /></DialogButton>

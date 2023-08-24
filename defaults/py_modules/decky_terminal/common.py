@@ -15,25 +15,27 @@ class Common:
     async def read_file(cls, filename: str) -> Optional[str]:
         try:
             f = await cls._run_async(open, filename, "r")
-            data = await cls._run_async(f.read, f)
+            data = await cls._run_async(f.read)
             f.close()
             return data
-        except:
+        except Exception as e:
+            print('exception', e)
             return None
 
     @classmethod
     async def write_file(cls, filename: str, content: str) -> bool:
         try:
-            f = await cls._run_async(open, filename, "w")
-            await cls._run_async(f.write, f, content)
+            f = await cls._run_async(open, filename, "w+")
+            await cls._run_async(f.write, content)
             f.close()
             return True
-        except:
+        except Exception as e:
+            print('exception', e)
             return False
         
     @classmethod
-    async def merge_dict(cls, prev: Dict[_T, _U], new: Dict[_T, _U]) -> bool:
-        for i, v in new:
+    def merge_dict(cls, prev: Dict[_T, _U], new: Dict[_T, _U]) -> Dict[_T, _U]:
+        for i, v in new.items():
             if prev.get(i) is None:
                 prev[i] = v
             else:

@@ -28,6 +28,7 @@ interface TerminalResult {
   exitcode?: number;
   is_started: boolean;
   is_completed: boolean;
+  title?: string;
 }
 
 const SidePanel: VFC = ({}) => {
@@ -125,7 +126,7 @@ const SidePanel: VFC = ({}) => {
                     Router.Navigate("/terminals/"+terminal.id);
                   }}
                 >
-                  { terminal.id }
+                  { terminal.title ?? terminal.id }
                 </DialogButton>
 
                 <DialogButton

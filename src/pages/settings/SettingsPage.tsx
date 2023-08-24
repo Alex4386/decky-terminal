@@ -2,7 +2,7 @@ import {
     Dropdown,
     Focusable, SteamSpinner, TextField, staticClasses,
   } from "decky-frontend-lib";
-  import { VFC, useState } from "react";
+  import { VFC, useEffect, useState } from "react";
 import TerminalGlobal from "../../common/global";
   
   
@@ -12,7 +12,9 @@ import TerminalGlobal from "../../common/global";
 
     const getShells = async () => {
         const serverAPI = TerminalGlobal.getServer()
+        console.log('getShells triggered')
         const shells = await serverAPI.callPluginMethod<{}, string[]>("get_shells", {});
+        console.log('getShells', shells);
         if (shells.success) {
             setShells(shells.result)
         }
@@ -21,6 +23,7 @@ import TerminalGlobal from "../../common/global";
     const getConfig = async () => {
         const serverAPI = TerminalGlobal.getServer()
         const config = await serverAPI.callPluginMethod<{}, string[]>("get_config", {});
+        console.log('getConfig', config);
         if (config.success) {
             setConfig(config.result)
         }
@@ -30,7 +33,7 @@ import TerminalGlobal from "../../common/global";
         const serverAPI = TerminalGlobal.getServer()
         const configApplied = await serverAPI.callPluginMethod<{
             config: Record<string, any>
-        }, string[]>("get_config", {
+        }, string[]>("append_config", {
             config,
         });
 
@@ -58,24 +61,30 @@ import TerminalGlobal from "../../common/global";
         })
     }
 
-    const setFontSize = async (fontSize: number) => {
+    const setFontSize = async (_fontSize: number|string) => {
+        let fontSize: number | string = "";
+        if (typeof _fontSize === 'string') {
+            try { fontSize = parseInt(_fontSize as string, 10) } catch(e) {}
+        }
+
         await appendConfig({
             font_size: fontSize,
         })
     }
 
-    useState(() => {
-        getShells();
-        getConfig();
+    useEffect(() => {
+        console.log('Fetching Settings')
+
+        if (!shells) getShells();
+        if (!config) getConfig();
 
         return () => {
-            setConfig(null);
         }
     })
 
     if (!config) return <SteamSpinner />;
     return (
-        <Focusable style={{ display: 'flex', gap: '.5rem', flexDirection: 'column'}}>
+        <Focusable style={{ display: 'flex', gap: '1rem', flexDirection: 'column'}}>
             <Focusable
                 style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
@@ -96,9 +105,10 @@ import TerminalGlobal from "../../common/global";
                     <div className={staticClasses.Text}>Font Family</div>
                     <div className={staticClasses.Label}>Change the font of the terminal</div>
                 </div>
-                <div style={{ minWidth: '150px' }}>
+                <div style={{ minWidth: '200px' }}>
                     <TextField
                         disabled={false}
+                        value={config?.font_family ?? ""}
                         onChange={(e) => {setFont(e.target.value)}} />
                 </div>
             </Focusable>
@@ -108,11 +118,12 @@ import TerminalGlobal from "../../common/global";
                     <div className={staticClasses.Text}>Font Size</div>
                     <div className={staticClasses.Label}>Change the font size of the terminal</div>
                 </div>
-                <div style={{ minWidth: '150px' }}>
+                <div style={{ minWidth: '200px' }}>
                     <TextField
                         disabled={false}
                         mustBeNumeric={true}
-                        onChange={(e) => {!isNaN(parseInt(e.target.value)) ? setFontSize(parseInt(e.target.value)) : undefined}} />
+                        value={config?.font_size ?? ""}
+                        onChange={(e) => {setFontSize(e.target.value)}} />
                 </div>
             </Focusable>
         </Focusable>

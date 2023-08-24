@@ -47,23 +47,8 @@ class Plugin:
         if id is None:
             id = "term_"+str(random.randint(100, 999))
         
-        Plugin.decky_terminal.create_terminal(id)
+        await Plugin.decky_terminal.create_terminal(id)
         return True
-    
-    async def get_config(self) -> str:
-        return Plugin.decky_terminal.get_config()
-    
-    async def append_config(self, config: dict) -> str:
-        return Plugin.decky_terminal.append_config(config)
-
-    async def get_shells(self) -> str:
-        return Plugin.decky_terminal.get_shells()
-
-    async def get_default_shell(self) -> str:
-        return Plugin.decky_terminal.get_default_shell()
-
-    async def set_default_shell(self, shell: str) -> bool:
-        return Plugin.decky_terminal.set_default_shell(shell)
 
     async def remove_terminal(self, id) -> bool:
         try:
@@ -81,6 +66,21 @@ class Plugin:
             return False
         except:
             return False
+    
+    async def get_config(self) -> str:
+        return await Plugin.decky_terminal.get_config()
+    
+    async def append_config(self, config: dict) -> str:
+        return await Plugin.decky_terminal.append_config(config)
+
+    async def get_shells(self) -> str:
+        return await Plugin.decky_terminal.get_shells()
+
+    async def get_default_shell(self) -> str:
+        return await Plugin.decky_terminal.get_default_shell()
+
+    async def set_default_shell(self, shell: str) -> bool:
+        return await Plugin.decky_terminal.set_default_shell(shell)
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
@@ -100,7 +100,7 @@ class Plugin:
         await self._main()
         print(Plugin.decky_terminal.get_server_port())
 
-        Plugin.decky_terminal.create_terminal('testterm')
+        await Plugin.decky_terminal.create_terminal('testterm')
         print('testterm created.')
 
 #plugin = Plugin()
