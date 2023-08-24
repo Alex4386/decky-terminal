@@ -23,7 +23,7 @@ const Terminal: VFC = () => {
   const [loaded, setLoaded] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [useGamepad, setUseGamepad] = useState(false);
-  const [title, setTitle] = useState(id);
+  const [title, setTitle] = useState<string | null>(null);
   const [config, setConfig] = useState<Record<string, any> | null>(null);
   let prevId: string|undefined = undefined;
 
@@ -58,28 +58,27 @@ const Terminal: VFC = () => {
   const connectIO = async () => {
     console.log('ConnectIO Triggered!');
     prevId = id;
+    setTitle(id);
 
     const xterm = xtermRef.current
 
     const serverAPI = TerminalGlobal.getServer()
-    if (!config) {
-      const localConfig = await getConfig()
-      console.log('config', config, 'localConfig', localConfig);
-      if (localConfig && xterm) {
-        if (localConfig.__version__ === 1) {
-          if (localConfig.font_family?.trim()) {
-            xterm.options.fontFamily = localConfig.font_family;
-          }
-
-          if (localConfig.font_size) {
-            const fs = parseInt(localConfig.font_size);
-            if (!isNaN(fs) && fs > 0) {
-              xterm.options.fontSize = fs;
-            }
-          }
-
-          console.log('xterm.options', xterm.options)
+    const localConfig = await getConfig()
+    console.log('config', config, 'localConfig', localConfig);
+    if (localConfig && xterm) {
+      if (localConfig.__version__ === 1) {
+        if (localConfig.font_family?.trim()) {
+          xterm.options.fontFamily = localConfig.font_family;
         }
+
+        if (localConfig.font_size) {
+          const fs = parseInt(localConfig.font_size);
+          if (!isNaN(fs) && fs > 0) {
+            xterm.options.fontSize = fs;
+          }
+        }
+
+        console.log('xterm.options', xterm.options)
       }
     }
 
@@ -112,7 +111,7 @@ const Terminal: VFC = () => {
 
       wsRef.current = ws;
       ws.onclose = () => {
-        xterm?.write("\n--- Terminal Disconnected ---")
+        xterm?.write("\r\n--- Terminal Disconnected ---")
       }
 
       if (xterm) {

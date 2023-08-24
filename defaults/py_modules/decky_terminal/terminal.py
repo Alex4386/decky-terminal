@@ -40,7 +40,7 @@ class Terminal:
         if min < 1000:
             return 1000
         else:
-            return min
+            return min * 5
 
     # SERIALIZE ============================================
     def serialize(self) -> dict:
