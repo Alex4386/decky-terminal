@@ -218,17 +218,22 @@ const Terminal: VFC = () => {
     };
   }, [ id ]);
 
-  const fitToScreen = () => {
+  const fitToScreen = (_fullScreen?: boolean) => {
+    const isFullScreen = _fullScreen === undefined ? fullScreen : _fullScreen
+    
     if (xtermRef.current) {
       const xterm = xtermRef.current
+
       const fitAddon = new FitAddon()
       xtermRef.current.loadAddon(fitAddon)
       const res = fitAddon.proposeDimensions();
       if (res?.rows && res.cols) {
-        if (fullScreen) xterm.resize(res.cols - 3, res.rows - 1)
-        else xterm.resize(res.cols, res.rows)
+        const colOffset = (Math.ceil(30 / xterm.options.fontSize));
+        if (isFullScreen) xterm.resize(res.cols - colOffset, res.rows - 1)
+        else xterm.resize(res.cols + colOffset, res.rows)
         //
       }
+
       console.log('triggered fit!', xtermRef.current?.cols, xtermRef.current?.rows)
     }
   }
@@ -238,7 +243,7 @@ const Terminal: VFC = () => {
     //handleResize()
     setTimeout(() => {
       try {
-        fitToScreen()
+        fitToScreen(true)
       } catch(e) {
         console.error(e)
       }
@@ -284,7 +289,7 @@ const Terminal: VFC = () => {
   if (!loaded) return <SteamSpinner />
 
   return (
-    <Focusable noFocusRing={true} onGamepadDirection={gamepadHandler} style={{ paddingTop: "2.5rem", color: "white" }}>
+    <Focusable noFocusRing={true} onGamepadDirection={gamepadHandler} style={{ margin: 0, padding: 0, paddingTop: "2.5rem", color: "white", width: '100vw' }}>
       <div style={{padding: fullScreen ? "0" : "0 1rem", }}>
         <XTermCSS />
         {
@@ -298,7 +303,9 @@ const Terminal: VFC = () => {
         }
         
         <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
-        <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: fullScreen ? "calc(100vh - 5.1rem)" : "calc(100vh - 11rem)" }}></div>
+        <div style={{boxSizing: 'content-box',}}>
+          <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: fullScreen ? "calc(100vh - 5.1rem)" : "calc(100vh - 11rem)" }}></div>
+        </div>
       </div>
     </Focusable>
   );
