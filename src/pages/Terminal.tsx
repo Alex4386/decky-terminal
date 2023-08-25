@@ -134,7 +134,7 @@ const Terminal: VFC = () => {
       const fitAddon = new FitAddon()
       xterm?.loadAddon(fitAddon);
 
-      fitAddon.fit()
+      fitToScreen()
 
       if (xterm) {
         xterm.onResize((e) => {
@@ -216,22 +216,25 @@ const Terminal: VFC = () => {
     };
   }, [ id ]);
 
+  const fitToScreen = () => {
+    if (xtermRef.current) {
+      const xterm = xtermRef.current
+      const fitAddon = new FitAddon()
+      xtermRef.current.loadAddon(fitAddon)
+      const res = fitAddon.proposeDimensions();
+      if (res?.rows && res.cols) {
+        xterm.resize(res.cols - 3, res.rows - 1)
+      }
+      console.log('triggered fit!', xtermRef.current?.cols, xtermRef.current?.rows)
+    }
+  }
+
   const startFullScreen = () => {
     setFullScreen(true);
     //handleResize()
     setTimeout(() => {
       try {
-        console.log('triggering fit!')
-        if (xtermRef.current) {
-          const xterm = xtermRef.current
-          const fitAddon = new FitAddon()
-          xtermRef.current.loadAddon(fitAddon)
-          const res = fitAddon.proposeDimensions();
-          if (res?.rows && res.cols) {
-            xterm.resize(res.cols - 3, res.rows - 1)
-          }
-        }
-        console.log('triggered fit!', xtermRef.current?.cols, xtermRef.current?.rows)
+        fitToScreen()
       } catch(e) {
         console.error(e)
       }
