@@ -22,7 +22,6 @@ const Terminal: VFC = () => {
   const { id } = useParams() as any;
   const [loaded, setLoaded] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
-  const [useGamepad, setUseGamepad] = useState(false);
   const [title, setTitle] = useState<string | null>(null);
   const [config, setConfig] = useState<Record<string, any> | null>(null);
   let prevId: string|undefined = undefined;
@@ -51,6 +50,13 @@ const Terminal: VFC = () => {
 
         return config.result;
     }
+
+    return;
+  }
+
+  const updateTitle = async (title: string): Promise<Record<string, any>|undefined> => {
+    const serverAPI = TerminalGlobal.getServer()
+    await serverAPI.callPluginMethod<{ id: string, title: string }, string[]>("set_terminal_title", { id, title });
 
     return;
   }
@@ -117,6 +123,7 @@ const Terminal: VFC = () => {
       if (xterm) {
         xterm.onTitleChange((title) => {
           setTitle(title)
+          updateTitle(title)
         })
       }
       
@@ -129,11 +136,6 @@ const Terminal: VFC = () => {
       await xterm?.open(xtermDiv.current as HTMLDivElement);
       // wait for it!
       await (new Promise<void>((res) => setTimeout(res, 1)));
-
-
-      const fitAddon = new FitAddon()
-      xterm?.loadAddon(fitAddon);
-
       fitToScreen()
 
       if (xterm) {
@@ -223,7 +225,9 @@ const Terminal: VFC = () => {
       xtermRef.current.loadAddon(fitAddon)
       const res = fitAddon.proposeDimensions();
       if (res?.rows && res.cols) {
-        xterm.resize(res.cols - 3, res.rows - 1)
+        if (fullScreen) xterm.resize(res.cols - 3, res.rows - 1)
+        else xterm.resize(res.cols, res.rows)
+        //
       }
       console.log('triggered fit!', xtermRef.current?.cols, xtermRef.current?.rows)
     }
@@ -242,7 +246,7 @@ const Terminal: VFC = () => {
   }
 
   const gamepadHandler = (evt: GamepadEvent) => {
-    if (useGamepad || fullScreen) {
+    if (config?.use_dpad) {
       console.log('gamepadEvent', evt);
 
       let command: string | undefined = undefined;
@@ -265,7 +269,7 @@ const Terminal: VFC = () => {
         wsRef.current.send(command)
 
         // refocus xterm
-        if (useGamepad && !fullScreen) {
+        if (config?.use_dpad && !fullScreen) {
           setTimeout(() => {
             if (xtermRef.current) {
               xtermRef.current.focus()
@@ -287,7 +291,6 @@ const Terminal: VFC = () => {
           (!fullScreen) ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
             <h1 style={{ margin: '1rem 0'}}>{title}</h1>
             <Focusable style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
-              <DialogButton style={{ minWidth: '1rem' }} onClick={() => setUseGamepad(!useGamepad)}>{!useGamepad ? <FaGamepad /> : <FaTimesCircle />}</DialogButton>
               <DialogButton style={{ minWidth: '1rem' }} onClick={openKeyboard}><FaKeyboard /></DialogButton>
               <DialogButton style={{ minWidth: '1rem' }} onClick={startFullScreen}><FaExpand /></DialogButton>
             </Focusable>
@@ -295,7 +298,7 @@ const Terminal: VFC = () => {
         }
         
         <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
-        <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ background: '#000', padding: '0', height: fullScreen ? "calc(100vh - 5rem)" : "calc(100vh - 11rem)" }}></div>
+        <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: fullScreen ? "calc(100vh - 5.1rem)" : "calc(100vh - 11rem)" }}></div>
       </div>
     </Focusable>
   );

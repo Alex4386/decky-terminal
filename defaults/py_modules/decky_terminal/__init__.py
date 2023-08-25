@@ -41,12 +41,16 @@ class DeckyTerminal:
                     raise IOError()
                 
                 shells = data.splitlines()
+                shells = list(filter(self._is_unix_shell_path, shells))
                 if len(shells) < 1:
                     return ["/bin/sh"]
                 
                 return shells
             except:
                 return ["/bin/sh"]
+    
+    def _is_unix_shell_path(self, path: str) -> bool:
+        return len(path) > 0 and path.startswith("/") and not path.isspace()
  
     # CONFIG ================================================
     def get_config_filename(self) -> str:
@@ -120,6 +124,11 @@ class DeckyTerminal:
     
     def get_terminal_ids(self) -> List[str]:
         return self._terminal_sessions.keys()
+    
+    def set_terminal_title(self, id, title):
+        term = self.get_terminal(id)
+        if term is not None:
+            term.title = title
     
     def get_terminals(self) -> Dict[str, Terminal]:
         return self._terminal_sessions

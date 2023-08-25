@@ -43,6 +43,9 @@ class Plugin:
         
         return terminal.serialize()
 
+    async def set_terminal_title(self, id: str, title: str) -> bool:
+        Plugin.decky_terminal.set_terminal_title(id, title)
+
     async def create_terminal(self, id = None) -> bool:
         if id is None:
             id = "term_"+str(random.randint(100, 999))

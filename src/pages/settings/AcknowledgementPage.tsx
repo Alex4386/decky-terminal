@@ -6,10 +6,11 @@ import {
   
   const AcknowledgementPage: VFC = () => {
     return (
-        <Focusable>
+        <Focusable style={{marginTop: '1rem'}}>
+            <style>{` p { margin: 0; } `}</style>
             <p>DeckyTerminal was made possible by following Opensource projects:</p>
             <ul>
-                <li><b>Websockets</b>: a Websocket Server implementation in Python (BSD-3 Clause License)</li>
+                <li><b>Websockets</b>: a Python Websocket Server (BSD-3 Clause License)</li>
                 <li><b>Xterm.js</b>: a xterm compliant web terminal (MIT License)</li>
             </ul>
             <p>&nbsp;</p>

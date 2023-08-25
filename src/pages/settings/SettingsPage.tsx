@@ -1,6 +1,6 @@
 import {
     Dropdown,
-    Focusable, SteamSpinner, TextField, staticClasses,
+    Focusable, SteamSpinner, TextField, ToggleField, staticClasses,
   } from "decky-frontend-lib";
   import { VFC, useEffect, useState } from "react";
 import TerminalGlobal from "../../common/global";
@@ -8,7 +8,7 @@ import TerminalGlobal from "../../common/global";
   
   const SettingsPage: VFC = () => {
     const [config, setConfig] = useState<Record<string, any> | null>(null);
-    const [shells, setShells] = useState(["/bin/bash"]);
+    const [shells, setShells] = useState<string[]>([]);
 
     const getShells = async () => {
         const serverAPI = TerminalGlobal.getServer()
@@ -17,6 +17,8 @@ import TerminalGlobal from "../../common/global";
         console.log('getShells', shells);
         if (shells.success) {
             setShells(shells.result)
+        } else {
+            setShells(["/bin/bash"])
         }
     }
 
@@ -72,10 +74,16 @@ import TerminalGlobal from "../../common/global";
         })
     }
 
+    const setUseDpad = async (dpad: boolean) => {
+        await appendConfig({
+            use_dpad: dpad,
+        })
+    }
+
     useEffect(() => {
         console.log('Fetching Settings')
 
-        if (!shells) getShells();
+        if (!shells || shells.length === 0) getShells();
         if (!config) getConfig();
 
         return () => {
@@ -84,7 +92,7 @@ import TerminalGlobal from "../../common/global";
 
     if (!config) return <SteamSpinner />;
     return (
-        <Focusable style={{ display: 'flex', gap: '1rem', flexDirection: 'column'}}>
+        <Focusable style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexDirection: 'column'}}>
             <Focusable
                 style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
@@ -124,6 +132,20 @@ import TerminalGlobal from "../../common/global";
                         mustBeNumeric={true}
                         value={config?.font_size ?? ""}
                         onChange={(e) => {setFontSize(e.target.value)}} />
+                </div>
+            </Focusable>
+            <Focusable
+                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                    <div className={staticClasses.Text}>DPad Arrowkeys</div>
+                    <div className={staticClasses.Label}>Use DPads as arrow key in terminal</div>
+                </div>
+                <div style={{ minWidth: '200px' }}>
+                    <ToggleField
+                        disabled={false}
+                        checked={config?.use_dpad ?? false}
+                        onChange={(e) => {setUseDpad(e)}}
+                        bottomSeparator={"none"} />
                 </div>
             </Focusable>
         </Focusable>

@@ -14,7 +14,7 @@ import {
   staticClasses,
 } from "decky-frontend-lib";
 import { useState, VFC } from "react";
-import { FaCogs, FaPlus, FaTimesCircle } from "react-icons/fa";
+import { FaCog, FaPlus, FaTimesCircle } from "react-icons/fa";
 import TerminalGlobal from "./common/global";
 
 // interface AddMethodArgs {
@@ -97,9 +97,9 @@ const SidePanel: VFC = ({}) => {
     getTerminals()
   });
 
-  return <div style={{ boxSizing: 'border-box', padding: '0 .5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-    <Field childrenLayout="inline" childrenContainerWidth="max" highlightOnFocus={false}>
-      <Focusable style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+  return <div style={{ boxSizing: 'border-box', width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <Field childrenLayout="inline" childrenContainerWidth="max" highlightOnFocus={false} bottomSeparator="none">
+      <Focusable style={{ marginRight: '.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
         <DialogButton onClick={createTerminal}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem'}}>
             <FaPlus />
@@ -110,46 +110,50 @@ const SidePanel: VFC = ({}) => {
           Router.CloseSideMenus();
           Router.Navigate("/decky-terminal/settings");
         }}>
-          <FaCogs />
+          <FaCog />
         </DialogButton>
       </Focusable>
     </Field>
     <PanelSection title="Active Terminals">
-      <PanelSectionRow>
-        {
-          result.map((terminal) => 
-            <Field childrenLayout="inline" childrenContainerWidth="max">
-              <Focusable style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                <DialogButton
-                  onClick={() => {
-                    Router.CloseSideMenus();
-                    Router.Navigate("/terminals/"+terminal.id);
-                  }}
-                >
-                  { terminal.title ?? terminal.id }
-                </DialogButton>
+      {
+        result.map((terminal) => 
+          <Field childrenLayout="inline" childrenContainerWidth="max">
+            <Focusable style={{ width: 'calc(100% - .5rem)', display: 'flex', alignItems: 'stretch', justifyContent: 'center', gap: '1rem' }}>
+              <DialogButton
+                onClick={() => {
+                  Router.CloseSideMenus();
+                  Router.Navigate("/terminals/"+terminal.id);
+                }}
+                style={{
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: 0,
+                  flexGrow: 1,
+                }}
+              >
+                { terminal.title ?? terminal.id }
+              </DialogButton>
 
-                <DialogButton
-                  onClick={() => {
-                    removeTerminal(terminal.id)
-                  }}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: '10px',
-                    width: '50px', 
-                    minWidth: 'auto',
-                    marginLeft: '.5em',
-                  }}
-                >
-                  <FaTimesCircle />
-                </DialogButton>
-              </Focusable>
-            </Field>
-          )
-        }
-      </PanelSectionRow>
+              <DialogButton
+                onClick={() => {
+                  removeTerminal(terminal.id)
+                }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: '5px',
+                  width: '50px', 
+                  minWidth: 'auto',
+                }}
+              >
+                <FaTimesCircle />
+              </DialogButton>
+            </Focusable>
+          </Field>
+        )
+      }
     </PanelSection>
   </div>;
 };
