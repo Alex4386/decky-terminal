@@ -80,6 +80,12 @@ import TerminalGlobal from "../../common/global";
         })
     }
 
+    const setDisableVirtualKeyboard = async (disabled: boolean) => {
+        await appendConfig({
+            disable_virtual_keyboard: disabled,
+        })
+    }
+
     useEffect(() => {
         console.log('Fetching Settings')
 
@@ -145,6 +151,20 @@ import TerminalGlobal from "../../common/global";
                         disabled={false}
                         checked={config?.use_dpad ?? false}
                         onChange={(e) => {setUseDpad(e)}}
+                        bottomSeparator={"none"} />
+                </div>
+            </Focusable>
+            <Focusable
+                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                    <div className={staticClasses.Text}>Disable Virtual Keyboard</div>
+                    <div className={staticClasses.Label}>Use if you are using external keyboard and don't want virtual keyboard to popup.<br />(Keyboard button will just move focus to terminal)</div>
+                </div>
+                <div style={{ minWidth: '200px' }}>
+                    <ToggleField
+                        disabled={false}
+                        checked={config?.disable_virtual_keyboard ?? false}
+                        onChange={(e) => {setDisableVirtualKeyboard(e)}}
                         bottomSeparator={"none"} />
                 </div>
             </Focusable>

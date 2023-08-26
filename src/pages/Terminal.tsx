@@ -176,6 +176,11 @@ const Terminal: VFC = () => {
   }
 
   const openKeyboard = () => {
+    if (config?.disable_virtual_keyboard) {
+      setFocusToTerminal();
+      return;
+    }
+
     const fakeInput = fakeInputRef.current as any
     console.log('fakeInput', fakeInput)
     if (fakeInput?.m_elInput) {
