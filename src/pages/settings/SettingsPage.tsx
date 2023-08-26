@@ -108,7 +108,7 @@ import TerminalGlobal from "../../common/global";
                 <div style={{ minWidth: '150px' }}>
                     <Dropdown
                         disabled={false}
-                        selectedOption={config?.default_shell ?? "/bin/bash"}
+                        selectedOption={config?.default_shell ?? shells.length > 0 ? shells[0] : ''}
                         onChange={(e) => {setShell(e.data)}}
                         rgOptions={shells.map((n) => ({ label: n, data: n }))} />
                 </div>
