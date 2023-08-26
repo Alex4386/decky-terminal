@@ -165,12 +165,12 @@ class Terminal:
             return False
     
     # WEBSOCKET - INTERNAL ==================================
-    def _remove_subscriber(self, ws: WebSocketServerProtocol):
+    async def _remove_subscriber(self, ws: WebSocketServerProtocol):
         # Internal only!
         if self.is_subscriber(ws):
             self.subscribers.remove(ws)
             if not ws.closed:
-                ws.close()
+                await ws.close()
 
     # BROADCAST =============================================
     async def broadcast_subscribers(self, data: bytes):
@@ -182,12 +182,11 @@ class Terminal:
             await ws.send(data)
 
         for ws in closed:
-            self._remove_subscriber(ws)
+            await self._remove_subscriber(ws)
 
     async def close_subscribers(self):
         for ws in self.subscribers:
-            if not ws.closed:
-                ws.close()
+            await self._remove_subscriber(ws)
 
     # IS ALIVE ==============================================
     def _is_process_started(self):

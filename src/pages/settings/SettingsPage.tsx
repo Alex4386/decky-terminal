@@ -114,7 +114,7 @@ import TerminalGlobal from "../../common/global";
                 </div>
             </Focusable>
             <Focusable
-                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
                     <div className={staticClasses.Text}>Font Family</div>
                     <div className={staticClasses.Label}>Change the font of the terminal</div>
@@ -127,7 +127,7 @@ import TerminalGlobal from "../../common/global";
                 </div>
             </Focusable>
             <Focusable
-                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
                     <div className={staticClasses.Text}>Font Size</div>
                     <div className={staticClasses.Label}>Change the font size of the terminal</div>
@@ -141,7 +141,7 @@ import TerminalGlobal from "../../common/global";
                 </div>
             </Focusable>
             <Focusable
-                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
                     <div className={staticClasses.Text}>DPad Arrowkeys</div>
                     <div className={staticClasses.Label}>Use DPads as arrow key in terminal</div>
@@ -155,10 +155,10 @@ import TerminalGlobal from "../../common/global";
                 </div>
             </Focusable>
             <Focusable
-                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
                     <div className={staticClasses.Text}>Disable Virtual Keyboard</div>
-                    <div className={staticClasses.Label}>Use if you are using external keyboard and don't want virtual keyboard to popup.<br />(Keyboard button will just move focus to terminal)</div>
+                    <div className={staticClasses.Label}>Use if you don't want virtual keyboard to popup when terminal is clicked or keyboard button is pressed</div>
                 </div>
                 <div style={{ minWidth: '200px' }}>
                     <ToggleField

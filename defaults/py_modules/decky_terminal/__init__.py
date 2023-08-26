@@ -103,7 +103,7 @@ class DeckyTerminal:
             return None
         
     async def _write_config(self, config: dict) -> bool:
-        return await Common.write_file(self.get_config_filename(), json.dumps(config))
+        return await Common.write_file(self.get_config_filename (), json.dumps(config))
 
     # TERMINAL CREATION =====================================
     async def create_terminal(self, id: str, cmdline: Optional[str] = None):

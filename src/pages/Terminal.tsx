@@ -14,7 +14,7 @@ import { AttachAddon } from "xterm-addon-attach";
 import { FitAddon } from 'xterm-addon-fit';
 import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
-import { FaExpand, FaGamepad, FaKeyboard, FaTimesCircle } from "react-icons/fa";
+import { FaExpand, FaGamepad, FaKeyboard, FaTerminal, FaTimesCircle } from "react-icons/fa";
 
 const Terminal: VFC = () => {
 
@@ -193,7 +193,7 @@ const Terminal: VFC = () => {
   const setFocusToTerminal = () => {
     setTimeout(() => {
       xtermRef.current?.focus()
-    }, 500)
+    }, 100)
   }
 
   useEffect(() => {
@@ -258,6 +258,7 @@ const Terminal: VFC = () => {
   const gamepadHandler = (evt: GamepadEvent) => {
     if (config?.use_dpad) {
       console.log('gamepadEvent', evt);
+      evt.preventDefault();
 
       let command: string | undefined = undefined;
       switch (evt.detail.button) {
@@ -301,16 +302,24 @@ const Terminal: VFC = () => {
           (!fullScreen) ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
             <h1 style={{ margin: '1rem 0'}}>{title}</h1>
             <Focusable style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
-              <DialogButton style={{ minWidth: '1rem' }} onClick={openKeyboard}><FaKeyboard /></DialogButton>
+              {
+                !config?.disable_virtual_keyboard ? 
+                  <DialogButton style={{ minWidth: '1rem' }} onClick={openKeyboard}><FaKeyboard /></DialogButton> :
+                  <DialogButton style={{ minWidth: '1rem' }} onClick={setFocusToTerminal}><FaTerminal /></DialogButton>
+              }
               <DialogButton style={{ minWidth: '1rem' }} onClick={startFullScreen}><FaExpand /></DialogButton>
             </Focusable>
           </div> : <div></div>
         }
         
-        <ModifiedTextField ref={fakeInputRef} style={{ display: 'none' }} onClick={setFocusToTerminal} />
-        <div style={{boxSizing: 'content-box',}}>
-          <div ref={xtermDiv} tabIndex={0} onClick={openKeyboard} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: fullScreen ? "calc(100vh - 5.1rem)" : "calc(100vh - 11rem)" }}></div>
-        </div>
+        {
+          config?.disable_virtual_keyboard && fullScreen ?
+          <DialogButton style={{ visibility: 'hidden', zIndex: -10, position: 'absolute' }} onClick={setFocusToTerminal}></DialogButton> :
+            <ModifiedTextField ref={fakeInputRef} disabled={config?.disable_virtual_keyboard ?? false} style={{ display: 'none' }} onClick={setFocusToTerminal} />
+        }
+        <Focusable onClick={openKeyboard} style={{boxSizing: 'content-box'}}>
+          <div ref={xtermDiv} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: fullScreen ? "calc(100vh - 5rem)" : "calc(100vh - 11rem)" }}></div>
+        </Focusable>
       </div>
     </Focusable>
   );

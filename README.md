@@ -17,9 +17,11 @@ Here are the cases that Decky Terminal can help you out!
 * [Play BadApple](https://www.youtube.com/watch?v=pSygAG933Yw)
 
 ## TODO
-* Gamepad support (up/down/left/right for arrow keys, etc.)
 * **PROPERLY** implement on-screen keyboard support (currently implemented via workaround)
+* ~~Gamepad support (up/down/left/right for arrow keys, etc.)~~ **Need to remove some bug**
 * ~~multi-instance support (implemented on backend, but not on frontend. yet.)~~
+
+Want some features to be implemented? Please make an issue on issues page!
 
 ## Build Instructions
 ### Prerequisites
