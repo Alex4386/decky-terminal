@@ -14,6 +14,7 @@ Here are the cases that Decky Terminal can help you out!
 * Manage your network infrastructure with GNU/Screen   
   <sup>(GNU/Screen installed seperately, RS232 to USB converter sold seperately)</sup>
 * [Decide NPC's fate](https://www.youtube.com/watch?v=cLT465WM8uw)
+* [Play BadApple](https://www.youtube.com/watch?v=pSygAG933Yw)
 
 ## TODO
 * Gamepad support (up/down/left/right for arrow keys, etc.)
