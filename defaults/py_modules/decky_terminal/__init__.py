@@ -80,11 +80,11 @@ class DeckyTerminal:
         config = await self.get_config()
 
         if config is None:
-            return await self.get_shells()[0]
+            return (await self.get_shells())[0]
         
         shell = config.get('default_shell')
         if shell is None:
-            return await self.get_shells()[0]
+            return (await self.get_shells())[0]
 
         return shell
     
@@ -110,6 +110,7 @@ class DeckyTerminal:
         if cmdline is None:
             cmdline = await self.get_default_shell()
 
+        print('cmdline!!!!', cmdline)
         if self._terminal_sessions.get(id) is None:
             self._terminal_sessions[id] = Terminal(cmdline)
     
@@ -171,7 +172,7 @@ class DeckyTerminal:
         if terminal is not None:
             terminal.add_subscriber(ws)
             await ws.wait_closed()
-            terminal._remove_subscriber(ws)
+            await terminal._remove_subscriber(ws)
         else:
             await ws.close()
 

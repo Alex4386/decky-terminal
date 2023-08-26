@@ -33,6 +33,7 @@ class Terminal:
     def __init__(self, cmdline: str):
         if cmdline is not None:
             self.cmdline = cmdline
+        print("New Terminal: ", cmdline)
         self.buffer = collections.deque([], maxlen=4096)
 
     def _calculate_sync_size(self):
