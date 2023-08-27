@@ -20,7 +20,7 @@ class Terminal:
     master_fd: int
     slave_fd: int
 
-    subscribers: List[WebSocketServerProtocol] = []
+    subscribers: List[WebSocketServerProtocol]
     buffer: collections.deque = None
 
     cols: int = 80
@@ -35,6 +35,7 @@ class Terminal:
             self.cmdline = cmdline
         print("New Terminal: ", cmdline)
         self.buffer = collections.deque([], maxlen=4096)
+        self.subscribers = []
 
     def _calculate_sync_size(self):
         min = self.cols * self.rows
