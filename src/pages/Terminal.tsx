@@ -300,7 +300,7 @@ const Terminal: VFC = () => {
         <XTermCSS />
         {
           (!fullScreen) ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem'}}>
-            <h1 style={{ margin: '1rem 0'}}>{title}</h1>
+            <h1 style={{ margin: '1rem 0', whiteSpace: 'nowrap', overflowX: 'hidden', textOverflow: 'ellipsis' }}>{title}</h1>
             <Focusable style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem' }}>
               {
                 !config?.disable_virtual_keyboard ? 
