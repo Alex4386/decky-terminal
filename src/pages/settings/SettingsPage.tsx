@@ -2,11 +2,11 @@ import {
     Dropdown,
     Focusable, SteamSpinner, TextField, ToggleField, staticClasses,
   } from "decky-frontend-lib";
-  import { VFC, useEffect, useState } from "react";
+import { VFC, useEffect, useState } from "react";
 import TerminalGlobal from "../../common/global";
   
-  
-  const SettingsPage: VFC = () => {
+
+const SettingsPage: VFC = () => {
     const [config, setConfig] = useState<Record<string, any> | null>(null);
     const [shells, setShells] = useState<string[]>([]);
 
@@ -108,7 +108,7 @@ import TerminalGlobal from "../../common/global";
                 <div style={{ minWidth: '150px' }}>
                     <Dropdown
                         disabled={false}
-                        selectedOption={config?.default_shell ?? shells.length > 0 ? shells[0] : ''}
+                        selectedOption={config && config.default_shell ? config.default_shell : shells[0]}
                         onChange={(e) => {setShell(e.data)}}
                         rgOptions={shells.map((n) => ({ label: n, data: n }))} />
                 </div>
