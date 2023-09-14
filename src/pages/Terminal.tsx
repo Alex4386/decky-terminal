@@ -7,6 +7,7 @@ import {
   Focusable,
   GamepadButton,
   Field,
+  staticClasses,
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
@@ -14,7 +15,7 @@ import { AttachAddon } from "xterm-addon-attach";
 import { FitAddon } from 'xterm-addon-fit';
 import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
-import { FaExpand, FaGamepad, FaKeyboard, FaTerminal, FaTimesCircle } from "react-icons/fa";
+import { FaExpand, FaKeyboard, FaTerminal } from "react-icons/fa";
 
 const Terminal: VFC = () => {
 
@@ -291,6 +292,28 @@ const Terminal: VFC = () => {
     }
   }
 
+  const getPadding = () => {
+    let amount = 5;
+    if (!fullScreen) {
+      amount += 6;
+    }
+
+    if (config?.handheld_mode) {
+      const row = 47;
+      const allRows = row * 5;
+      const padding = 3;
+
+      const final = allRows + padding;
+
+      // remove bottom bar padding
+      amount -= 2.5;
+
+      return 'calc('+amount+'em + '+final+'px)';
+    }
+
+    return amount+'em';
+  };
+
   const ModifiedTextField = TextField as any;
   if (!loaded) return <SteamSpinner />
 
@@ -318,8 +341,15 @@ const Terminal: VFC = () => {
             <ModifiedTextField ref={fakeInputRef} disabled={config?.disable_virtual_keyboard ?? false} style={{ display: 'none' }} onClick={setFocusToTerminal} />
         }
         <Focusable onClick={openKeyboard} style={{boxSizing: 'content-box'}}>
-          <div ref={xtermDiv} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: fullScreen ? "calc(100vh - 5rem)" : "calc(100vh - 11rem)" }}></div>
+          <div ref={xtermDiv} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: "calc(100vh - "+getPadding()+")" }}></div>
         </Focusable>
+        {
+          config?.handheld_mode &&
+            <Focusable style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingTop: fullScreen ? '1em' : '2em' }}>
+              <div className={staticClasses.Text}>Reserved for Virtual Keyboard</div>
+              <div className={staticClasses.Label}>Disable Handheld mode to remove this padding</div>
+            </Focusable>
+        }
       </div>
     </Focusable>
   );

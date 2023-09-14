@@ -86,6 +86,12 @@ const SettingsPage: VFC = () => {
         })
     }
 
+    const setHandheld = async (enabled: boolean) => {
+        await appendConfig({
+            handheld_mode: enabled,
+        })
+    }
+
     useEffect(() => {
         console.log('Fetching Settings')
 
@@ -165,6 +171,20 @@ const SettingsPage: VFC = () => {
                         disabled={false}
                         checked={config?.disable_virtual_keyboard ?? false}
                         onChange={(e) => {setDisableVirtualKeyboard(e)}}
+                        bottomSeparator={"none"} />
+                </div>
+            </Focusable>
+            <Focusable
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                    <div className={staticClasses.Text}>Handheld Mode</div>
+                    <div className={staticClasses.Label}>Enabling this will pre-allocate the area used by virtual keyboard</div>
+                </div>
+                <div style={{ minWidth: '200px' }}>
+                    <ToggleField
+                        disabled={false}
+                        checked={config?.handheld_mode ?? false}
+                        onChange={(e) => {setHandheld(e)}}
                         bottomSeparator={"none"} />
                 </div>
             </Focusable>
