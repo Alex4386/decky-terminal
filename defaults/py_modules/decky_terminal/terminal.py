@@ -14,6 +14,7 @@ from .common import Common
 class Terminal:
     _sync_size: int = 1000
 
+    is_shell: bool = True
     cmdline: Optional[str]
     process: asyncio.subprocess.Process = None
 
@@ -30,10 +31,11 @@ class Terminal:
 
     _title_cache: bytes = b""
     
-    def __init__(self, cmdline: str):
+    def __init__(self, cmdline: str, is_shell: bool = True):
         if cmdline is not None:
             self.cmdline = cmdline
-        print("New Terminal: ", cmdline)
+
+        self.is_shell = is_shell
         self.buffer = collections.deque([], maxlen=4096)
         self.subscribers = []
 
@@ -118,6 +120,8 @@ class Terminal:
         result["LINES"] = str(self.rows)
         result["COLUMNS"] = str(self.cols)
         result["XDG_RUNTIME_DIR"] = "/run/user/"+str(os.getuid())
+        if self.cmdline is not None and self.is_shell:
+            result["SHELL"] = self.cmdline
 
         return result
 
