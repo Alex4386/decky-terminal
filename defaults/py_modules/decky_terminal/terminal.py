@@ -115,7 +115,7 @@ class Terminal:
             await asyncio.sleep(0)
 
     # PROCESS CONTROL =======================================
-    async def get_terminal_env(self):
+    def get_terminal_env(self):
         result = dict(**os.environ)
         result["TERM"] = "xterm-256color"
         result["PWD"] = result["HOME"]
