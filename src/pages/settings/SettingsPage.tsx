@@ -92,6 +92,12 @@ const SettingsPage: VFC = () => {
         })
     }
 
+    const setUseDisplay = async (enabled: boolean) => {
+        await appendConfig({
+            use_display: enabled,
+        })
+    }
+
     useEffect(() => {
         console.log('Fetching Settings')
 
@@ -185,6 +191,20 @@ const SettingsPage: VFC = () => {
                         disabled={false}
                         checked={config?.handheld_mode ?? false}
                         onChange={(e) => {setHandheld(e)}}
+                        bottomSeparator={"none"} />
+                </div>
+            </Focusable>
+            <Focusable
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                    <div className={staticClasses.Text}>Use Display</div>
+                    <div className={staticClasses.Label}>Set Display environment variable to allow GUI Applications to run</div>
+                </div>
+                <div style={{ minWidth: '200px' }}>
+                    <ToggleField
+                        disabled={false}
+                        checked={config?.use_display ?? false}
+                        onChange={(e) => {setUseDisplay(e)}}
                         bottomSeparator={"none"} />
                 </div>
             </Focusable>
