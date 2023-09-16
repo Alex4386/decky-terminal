@@ -27,17 +27,20 @@ class Terminal:
     cols: int = 80
     rows: int = 24
 
-    title: str = ""
+    flags: dict = dict()
 
+    title: str = ""
     _title_cache: bytes = b""
     
-    def __init__(self, cmdline: str, is_shell: bool = True):
+    def __init__(self, cmdline: str, is_shell: bool = True, **kwargs):
         if cmdline is not None:
             self.cmdline = cmdline
 
         self.is_shell = is_shell
         self.buffer = collections.deque([], maxlen=4096)
         self.subscribers = []
+
+        self.flags = kwargs
 
     def _calculate_sync_size(self):
         min = self.cols * self.rows
@@ -112,7 +115,7 @@ class Terminal:
             await asyncio.sleep(0)
 
     # PROCESS CONTROL =======================================
-    def get_terminal_env(self):
+    async def get_terminal_env(self):
         result = dict(**os.environ)
         result["TERM"] = "xterm-256color"
         result["PWD"] = result["HOME"]
@@ -120,8 +123,12 @@ class Terminal:
         result["LINES"] = str(self.rows)
         result["COLUMNS"] = str(self.cols)
         result["XDG_RUNTIME_DIR"] = "/run/user/"+str(os.getuid())
+
         if self.cmdline is not None and self.is_shell:
             result["SHELL"] = self.cmdline
+
+        if self.flags.get("use_display") == True:
+            result["DISPLAY"] = ":0"
 
         return result
 

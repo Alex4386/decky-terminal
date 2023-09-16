@@ -104,6 +104,18 @@ class DeckyTerminal:
         
     async def _write_config(self, config: dict) -> bool:
         return await Common.write_file(self.get_config_filename (), json.dumps(config))
+    
+    async def _get_terminal_flags(self) -> dict:
+        flags = dict()
+        config = await self._get_config()
+
+        if config is not None:
+            if config.get("use_display") is not None:
+                use_display = config.get("use_display")
+                if type(use_display) == bool:
+                    flags["use_display"] = use_display
+
+        return flags
 
     # TERMINAL CREATION =====================================
     async def create_terminal(self, id: str, cmdline: Optional[str] = None):
@@ -111,8 +123,10 @@ class DeckyTerminal:
             cmdline = await self.get_default_shell()
 
         print('cmdline!!!!', cmdline)
+        flags = await self._get_terminal_flags()
+
         if self._terminal_sessions.get(id) is None:
-            self._terminal_sessions[id] = Terminal(cmdline)
+            self._terminal_sessions[id] = Terminal(cmdline, **flags)
     
     async def remove_terminal(self, id: str):
         if self._terminal_sessions.get(id) is not None:
