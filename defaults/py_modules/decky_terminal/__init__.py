@@ -1,13 +1,18 @@
+import asyncio
+import json
+import os
+import platform
+import random
+import uuid
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
+
 from decky_plugin import DECKY_PLUGIN_SETTINGS_DIR
 from websockets import server
-import random
-import asyncio
-from .terminal import Terminal
-from typing import Any, List, Dict, Optional, TypeVar, Callable
-import platform
-import json
+
 from .common import Common
-import os
+from .terminal import Terminal
+
 
 class DeckyTerminal:
     _bind_address = "127.0.0.1"
@@ -26,36 +31,31 @@ class DeckyTerminal:
     # GET_FETCH =============================================
     def is_running(self):
         return self._server_port > 0
-    
+
     def get_server_port(self):
         return self._server_port
 
     # GET_SHELL =============================================
     async def get_shells(self) -> List[str]:
-        if platform.system() == 'Windows':
+        if platform.system() == "Windows":
             return ["powershell", "cmd"]
         else:
-            try:
-                data = await Common.read_file("/etc/shells")
-                if data is None:
-                    raise IOError()
-                
+            data = await Common.read_file("/etc/shells")
+            if data is not None:
                 shells = data.splitlines()
                 shells = list(filter(self._is_unix_shell_path, shells))
-                if len(shells) < 1:
-                    return ["/bin/sh"]
-                
-                return shells
-            except:
-                return ["/bin/sh"]
-    
+                if len(shells) > 0:
+                    return shells
+
+            return ["/bin/sh"]
+
     def _is_unix_shell_path(self, path: str) -> bool:
         return len(path) > 0 and path.startswith("/") and not path.isspace()
- 
+
     # CONFIG ================================================
     def get_config_filename(self) -> str:
-        return DECKY_PLUGIN_SETTINGS_DIR+os.sep+"config.json"
-    
+        return os.path.join(DECKY_PLUGIN_SETTINGS_DIR, "config.json")
+
     async def get_config(self) -> dict:
         config = await self._get_config()
         if config is None:
@@ -72,7 +72,7 @@ class DeckyTerminal:
             prev_config = dict(
                 __version__=1,
             )
-        
+
         config = Common.merge_dict(prev_config, new_config)
         return await self._write_config(config)
 
@@ -81,30 +81,30 @@ class DeckyTerminal:
 
         if config is None:
             return (await self.get_shells())[0]
-        
-        shell = config.get('default_shell')
+
+        shell = config.get("default_shell")
         if shell is None:
             return (await self.get_shells())[0]
 
         return shell
-    
+
     async def set_default_shell(self, shell: str) -> bool:
-        return await self.append_config(dict( default_shell=shell ))
- 
+        return await self.append_config(dict(default_shell=shell))
+
     # CONFIG - INTERNAL =======================================
     async def _get_config(self) -> Optional[dict]:
         try:
             data = await Common.read_file(self.get_config_filename())
             if data is None:
                 raise IOError()
-            
+
             return json.loads(data)
         except IOError:
             return None
-        
+
     async def _write_config(self, config: dict) -> bool:
-        return await Common.write_file(self.get_config_filename (), json.dumps(config))
-    
+        return await Common.write_file(self.get_config_filename(), json.dumps(config))
+
     async def _get_terminal_flags(self) -> dict:
         flags = dict()
         config = await self._get_config()
@@ -112,39 +112,41 @@ class DeckyTerminal:
         if config is not None:
             if config.get("use_display") is not None:
                 use_display = config.get("use_display")
-                if type(use_display) == bool:
+                if isinstance(use_display, bool):
                     flags["use_display"] = use_display
 
         return flags
 
     # TERMINAL CREATION =====================================
-    async def create_terminal(self, id: str, cmdline: Optional[str] = None):
+    async def create_terminal(self, terminal_id: str = None, cmdline: Optional[str] = None):
         if cmdline is None:
             cmdline = await self.get_default_shell()
 
-        print('cmdline!!!!', cmdline)
+        if terminal_id is None:
+            terminal_id = f"term-{uuid.uuid4()}"
+
         flags = await self._get_terminal_flags()
 
-        if self._terminal_sessions.get(id) is None:
-            self._terminal_sessions[id] = Terminal(cmdline, **flags)
-    
-    async def remove_terminal(self, id: str):
-        if self._terminal_sessions.get(id) is not None:
-            terminal: Terminal = self._terminal_sessions[id]
+        if self._terminal_sessions.get(terminal_id) is None:
+            self._terminal_sessions[terminal_id] = Terminal(cmdline, **flags)
+
+    async def remove_terminal(self, terminal_id: str):
+        if self._terminal_sessions.get(terminal_id) is not None:
+            terminal: Terminal = self._terminal_sessions[terminal_id]
             await terminal.shutdown()
-            del self._terminal_sessions[id]
-    
-    def get_terminal(self, id) -> Optional[Terminal]:
-        return self._terminal_sessions.get(id)
-    
+            del self._terminal_sessions[terminal_id]
+
+    def get_terminal(self, terminal_id) -> Optional[Terminal]:
+        return self._terminal_sessions.get(terminal_id)
+
     def get_terminal_ids(self) -> List[str]:
         return self._terminal_sessions.keys()
-    
-    def set_terminal_title(self, id, title):
-        term = self.get_terminal(id)
+
+    def set_terminal_title(self, terminal_id, title):
+        term = self.get_terminal(terminal_id)
         if term is not None:
             term.title = title
-    
+
     def get_terminals(self) -> Dict[str, Terminal]:
         return self._terminal_sessions
 
@@ -152,14 +154,14 @@ class DeckyTerminal:
     async def start_server(self) -> bool:
         if self.is_running():
             return False
-        
+
         await self._start_server()
         asyncio.ensure_future(self._server_wait(), loop=self._event_loop)
 
     async def stop_server(self) -> bool:
         if not self.is_running():
             return False
-        
+
         await self._kill_all_terminals()
         self._server_cleanup()
         self._server_port = -1
@@ -167,21 +169,16 @@ class DeckyTerminal:
     # SERVER HANDLER ========================================
     async def handler(self, ws: server.WebSocketServerProtocol, path: str):
         if path.startswith("/v1/terminals/"):
-            splitted = path.split("?", 1)
-
-            target_path = splitted[0]
-            query_string = None if len(splitted) == 1 else splitted[1]
-            
-            # TODO: This parsing mechanism sucks - make it better
-            terminal_id = target_path.replace("/v1/terminals/", "", 1)
+            url = urlparse(path)
+            terminal_id = url.path.split("/")[:-1]
             return await self.terminal_handler(ws, terminal_id)
         elif path == "/echo":
             return await self.echo_handler(ws)
         else:
             await ws.close()
-        
-    async def terminal_handler(self, ws: server.WebSocketServerProtocol, id: str):
-        terminal = self.get_terminal(id)
+
+    async def terminal_handler(self, ws: server.WebSocketServerProtocol, terminal_id: str):
+        terminal = self.get_terminal(terminal_id)
 
         if terminal is not None:
             terminal.add_subscriber(ws)
@@ -189,7 +186,6 @@ class DeckyTerminal:
             await terminal._remove_subscriber(ws)
         else:
             await ws.close()
-
 
     async def echo_handler(self, ws: server.WebSocketServerProtocol):
         while not ws.closed:
@@ -217,7 +213,7 @@ class DeckyTerminal:
         ws_server = await server.serve(self.handler, self._bind_address, port)
         self._server_port = port
         self._server = ws_server
-    
+
     async def _server_wait(self):
         future = asyncio.Future(loop=self._event_loop)
         self._server_future = future
@@ -228,7 +224,7 @@ class DeckyTerminal:
         if self._server_future is not None:
             self._server_future.done()
             self._server_future = None
-        
+
         if self._server is not None:
             self._server.close()
             self._server = None
@@ -236,4 +232,3 @@ class DeckyTerminal:
     # UTILS =====================================================================
     def _get_random_port(self) -> int:
         return random.randint(10000, 19999)
-
