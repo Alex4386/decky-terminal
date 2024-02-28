@@ -1,11 +1,6 @@
 import random
 from typing import List, Optional
-
-try:
-    from decky_terminal import DeckyTerminal
-except Exception as e:
-    print('[DeckyTerminal] Import Failed:', type(e), e)
-    raise e
+from decky_terminal import DeckyTerminal
 
 class Plugin:
     decky_terminal = DeckyTerminal()
