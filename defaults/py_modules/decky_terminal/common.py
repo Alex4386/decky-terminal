@@ -5,6 +5,7 @@ from typing import Callable, Dict, Optional, TypeVar
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
+
 class Common:
     @classmethod
     async def _run_async(cls, fun: Callable[..., _T], *args) -> _T:
@@ -19,7 +20,7 @@ class Common:
             f.close()
             return data
         except Exception as e:
-            print('exception', e)
+            print("exception", e)
             return None
 
     @classmethod
@@ -30,9 +31,9 @@ class Common:
             f.close()
             return True
         except Exception as e:
-            print('exception', e)
+            print("exception", e)
             return False
-        
+
     @classmethod
     def merge_dict(cls, prev: Dict[_T, _U], new: Dict[_T, _U]) -> Dict[_T, _U]:
         for i, v in new.items():
@@ -43,5 +44,5 @@ class Common:
                     prev[i] = cls.merge_dict(prev[i], new[i])
                 else:
                     prev[i] = v
-        
+
         return prev
