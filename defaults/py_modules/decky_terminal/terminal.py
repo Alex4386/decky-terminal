@@ -204,22 +204,13 @@ class Terminal:
 
     # IS ALIVE ==============================================
     def _is_process_started(self):
-        if self.process is None:
-            return False
-
-        return True
+        return self.process is not None
 
     def _is_process_alive(self):
-        if not self._is_process_started():
-            return False
-
-        if self.process.returncode is not None:
-            return False
-
-        return True
+        return self._is_process_started() and self.process.returncode is None
 
     def _is_process_completed(self):
-        return not self._is_process_alive() and self._is_process_started()
+        return self._is_process_started() and self.process.returncode
 
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
