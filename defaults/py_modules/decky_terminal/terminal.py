@@ -1,15 +1,17 @@
+import asyncio
+import collections
 import fcntl
+import os
+import pty
 import signal
 import struct
-import subprocess
 import termios
 from typing import List, Optional
-import asyncio
+
 from websockets import WebSocketServerProtocol
-import collections
-import pty
-import os
+
 from .common import Common
+
 
 class Terminal:
     _sync_size: int = 1000
