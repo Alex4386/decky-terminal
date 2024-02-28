@@ -2,6 +2,7 @@ import random
 from typing import List, Optional
 from decky_terminal import DeckyTerminal
 
+
 class Plugin:
     decky_terminal = DeckyTerminal()
 
@@ -17,27 +18,29 @@ class Plugin:
 
         for id, terminal in terminals.items():
             result = terminal.serialize()
-            output.append(dict(
-                id=id,
-                **result,
-            ))
-        
+            output.append(
+                dict(
+                    id=id,
+                    **result,
+                )
+            )
+
         return output
 
     async def get_terminal(self, id: str) -> Optional[dict]:
         terminal = Plugin.decky_terminal.get_terminal(id)
         if terminal is None:
             return None
-        
+
         return terminal.serialize()
 
     async def set_terminal_title(self, id: str, title: str) -> bool:
         Plugin.decky_terminal.set_terminal_title(id, title)
 
-    async def create_terminal(self, id = None) -> bool:
+    async def create_terminal(self, id=None) -> bool:
         if id is None:
-            id = "term_"+str(random.randint(100, 999))
-        
+            id = "term_" + str(random.randint(100, 999))
+
         await Plugin.decky_terminal.create_terminal(id)
         return True
 
@@ -57,10 +60,10 @@ class Plugin:
             return False
         except:
             return False
-    
+
     async def get_config(self) -> str:
         return await Plugin.decky_terminal.get_config()
-    
+
     async def append_config(self, config: dict) -> str:
         return await Plugin.decky_terminal.append_config(config)
 
@@ -75,12 +78,12 @@ class Plugin:
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
-        #decky_plugin.logger.info("Hello World!")
+        # decky_plugin.logger.info("Hello World!")
         await Plugin.decky_terminal.start_server()
 
     # Function called first during the unload process, utilize this to handle your plugin being removed
     async def _unload(self):
-        #decky_plugin.logger.info("Goodbye World!")
+        # decky_plugin.logger.info("Goodbye World!")
         await Plugin.decky_terminal.stop_server()
 
     # Migrations that should be performed before entering `_main()`.
@@ -91,10 +94,11 @@ class Plugin:
         await self._main()
         print(Plugin.decky_terminal.get_server_port())
 
-        await Plugin.decky_terminal.create_terminal('testterm')
-        print('testterm created.')
+        await Plugin.decky_terminal.create_terminal("testterm")
+        print("testterm created.")
 
-#plugin = Plugin()
-#loop = asyncio.get_event_loop()
-#asyncio.ensure_future(plugin._internal_test(), loop=loop)
-#loop.run_forever()
+
+# plugin = Plugin()
+# loop = asyncio.get_event_loop()
+# asyncio.ensure_future(plugin._internal_test(), loop=loop)
+# loop.run_forever()
