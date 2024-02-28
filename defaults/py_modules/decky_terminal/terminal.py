@@ -63,9 +63,9 @@ class Terminal:
             if self.process.returncode is not None:
                 data["exitcode"] = self.process.returncode
 
-        if self.title is not None and self.title != "":
-            if not self.title.isspace():
-                data["title"] = self.title
+        # self.title is not None, whitespace or empty
+        if self.title is not None and self.title.strip():
+            data["title"] = self.title
 
         return data
 
@@ -82,7 +82,7 @@ class Terminal:
         if self._is_process_alive():
             await self._change_pty_size(rows, cols)
             await self.process.send_signal(signal.SIGWINCH)
-            await self._write_stdin(b"\x1b[8;%d;%dt" % (rows, cols))
+            await self._write_stdin(f"\x1b[8;{rows};{cols}t".encode("utf-8"))
 
     async def _change_pty_size(self, rows: int, cols: int):
         self.rows = rows
@@ -110,7 +110,7 @@ class Terminal:
             try:
                 data = await ws.recv()
                 if isinstance(data, str):
-                    data = bytes(data, "utf-8")
+                    data = data.encode("utf-8")
 
                 await self._write_stdin(data)
             except Exception as e:
