@@ -39,19 +39,14 @@ class DeckyTerminal:
         if platform.system() == "Windows":
             return ["powershell", "cmd"]
         else:
-            try:
-                data = await Common.read_file("/etc/shells")
-                if data is None:
-                    raise IOError()
-
+            data = await Common.read_file("/etc/shells")
+            if data is not None:
                 shells = data.splitlines()
                 shells = list(filter(self._is_unix_shell_path, shells))
-                if len(shells) < 1:
-                    return ["/bin/sh"]
+                if shells:
+                    return shells
 
-                return shells
-            except:
-                return ["/bin/sh"]
+            return ["/bin/sh"]
 
     def _is_unix_shell_path(self, path: str) -> bool:
         return len(path) > 0 and path.startswith("/") and not path.isspace()
