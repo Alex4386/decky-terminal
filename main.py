@@ -18,12 +18,8 @@ class Plugin:
 
         for terminal_id, terminal in terminals.items():
             result = terminal.serialize()
-            output.append(
-                dict(
-                    id=terminal_id,
-                    **result,
-                )
-            )
+            result["id"] = terminal_id  # TODO: should a terminal own its ID?
+            output.append(result)
 
         return output
 
