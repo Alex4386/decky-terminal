@@ -1,4 +1,3 @@
-import random
 from typing import List, Optional
 from decky_terminal import DeckyTerminal
 
@@ -34,9 +33,6 @@ class Plugin:
         Plugin.decky_terminal.set_terminal_title(terminal_id, title)
 
     async def create_terminal(self, terminal_id=None) -> bool:
-        if terminal_id is None:
-            terminal_id = "term_" + str(random.randint(100, 999))
-
         await Plugin.decky_terminal.create_terminal(terminal_id)
         return True
 

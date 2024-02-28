@@ -3,6 +3,7 @@ import json
 import os
 import platform
 import random
+import uuid
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -117,12 +118,14 @@ class DeckyTerminal:
         return flags
 
     # TERMINAL CREATION =====================================
-    async def create_terminal(self, terminal_id: str, cmdline: Optional[str] = None):
+    async def create_terminal(self, terminal_id: str = None, cmdline: Optional[str] = None):
         if cmdline is None:
             cmdline = await self.get_default_shell()
 
-        print("cmdline!!!!", cmdline)
         flags = await self._get_terminal_flags()
+
+        if terminal_id is None:
+            terminal_id = str(uuid.uuid4())
 
         if self._terminal_sessions.get(terminal_id) is None:
             self._terminal_sessions[terminal_id] = Terminal(cmdline, **flags)
