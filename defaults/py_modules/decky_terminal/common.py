@@ -39,7 +39,7 @@ class Common:
             if prev.get(i) is None:
                 prev[i] = v
             else:
-                if type(prev.get(i)) is dict and type(v) is dict:
+                if isinstance(prev.get(i), dict) and isinstance(v, dict):
                     prev[i] = cls.merge_dict(prev[i], new[i])
                 else:
                     prev[i] = v
