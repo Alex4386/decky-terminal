@@ -53,7 +53,7 @@ class DeckyTerminal:
 
     # CONFIG ================================================
     def get_config_filename(self) -> str:
-        return DECKY_PLUGIN_SETTINGS_DIR + os.sep + "config.json"
+        return os.path.join(DECKY_PLUGIN_SETTINGS_DIR, "config.json")
 
     async def get_config(self) -> dict:
         config = await self._get_config()
