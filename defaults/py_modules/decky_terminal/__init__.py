@@ -1,13 +1,16 @@
+import asyncio
+import json
+import os
+import platform
+import random
+from typing import Any, Dict, List, Optional
+
 from decky_plugin import DECKY_PLUGIN_SETTINGS_DIR
 from websockets import server
-import random
-import asyncio
-from .terminal import Terminal
-from typing import Any, List, Dict, Optional, TypeVar, Callable
-import platform
-import json
+
 from .common import Common
-import os
+from .terminal import Terminal
+
 
 class DeckyTerminal:
     _bind_address = "127.0.0.1"
