@@ -121,12 +121,15 @@ class Terminal:
     # PROCESS CONTROL =======================================
     def get_terminal_env(self):
         result = dict(os.environ)
-        result["TERM"] = "xterm-256color"
-        result["PWD"] = result["HOME"]
-        result["SSH_TTY"] = os.ttyname(self.slave_fd)
-        result["LINES"] = str(self.rows)
-        result["COLUMNS"] = str(self.cols)
-        result["XDG_RUNTIME_DIR"] = "/run/user/" + str(os.getuid())
+
+        result.update({
+            "TERM": "xterm-256color",
+            "PWD": result["HOME"],
+            "SSH_TTY": os.ttyname(self.slave_fd),
+            "LINES": str(self.rows),
+            "COLUMNS": str(self.cols),
+            "XDG_RUNTIME_DIR": f"/run/user/{os.getuid()}"
+        })
 
         if self.cmdline is not None and self.is_shell:
             result["SHELL"] = self.cmdline
