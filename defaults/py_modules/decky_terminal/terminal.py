@@ -137,7 +137,6 @@ class Terminal:
 
     async def _start_process(self):
         self.master_fd, self.slave_fd = pty.openpty()
-        #self._set_pty_settings()
 
         await self._change_pty_size(self.rows, self.cols)
         self.process = await asyncio.create_subprocess_exec(
@@ -147,7 +146,6 @@ class Terminal:
             stderr=self.slave_fd,
             stdin=self.slave_fd,
             env=self.get_terminal_env(),
-            #creationflags=subprocess.CREATE_NO_WINDOW,
             cwd=os.getenv("HOME"),
         )
 
