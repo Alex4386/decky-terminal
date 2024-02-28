@@ -120,7 +120,7 @@ class Terminal:
 
     # PROCESS CONTROL =======================================
     def get_terminal_env(self):
-        result = dict(**os.environ)
+        result = dict(os.environ)
         result["TERM"] = "xterm-256color"
         result["PWD"] = result["HOME"]
         result["SSH_TTY"] = os.ttyname(self.slave_fd)
