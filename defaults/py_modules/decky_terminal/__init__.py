@@ -115,7 +115,7 @@ class DeckyTerminal:
         if config is not None:
             if config.get("use_display") is not None:
                 use_display = config.get("use_display")
-                if type(use_display) == bool:
+                if isinstance(use_display, bool):
                     flags["use_display"] = use_display
 
         return flags
