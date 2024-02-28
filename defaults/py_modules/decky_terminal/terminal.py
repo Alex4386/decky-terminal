@@ -107,7 +107,7 @@ class Terminal:
         while not ws.closed:
             try:
                 data = await ws.recv()
-                if type(data) == str:
+                if isinstance(data, str):
                     data = bytes(data, 'utf-8')
 
                 await self._write_stdin(data)
@@ -129,7 +129,7 @@ class Terminal:
         if self.cmdline is not None and self.is_shell:
             result["SHELL"] = self.cmdline
 
-        if self.flags.get("use_display") == True:
+        if self.flags.get("use_display"):
             result["DISPLAY"] = ":0"
 
         return result
