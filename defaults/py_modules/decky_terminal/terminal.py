@@ -6,7 +6,7 @@ import pty
 import signal
 import struct
 import termios
-from typing import List, Optional
+from typing import List
 
 from websockets import WebSocketServerProtocol
 
@@ -17,7 +17,7 @@ class Terminal:
     _sync_size: int = 1000
 
     is_shell: bool = True
-    cmdline: Optional[str]
+    cmdline: str = None
     process: asyncio.subprocess.Process = None
 
     master_fd: int
@@ -35,8 +35,7 @@ class Terminal:
     _title_cache: bytes = b""
 
     def __init__(self, cmdline: str, is_shell: bool = True, **kwargs):
-        if cmdline is not None:
-            self.cmdline = cmdline
+        self.cmdline = cmdline  # TODO: maybe raise ValueError? cmdline can't meaningfully be None or undefined since it must be available for _start_process
 
         self.is_shell = is_shell
         self.buffer = collections.deque([], maxlen=4096)
