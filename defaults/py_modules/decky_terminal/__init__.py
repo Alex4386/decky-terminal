@@ -121,30 +121,30 @@ class DeckyTerminal:
         return flags
 
     # TERMINAL CREATION =====================================
-    async def create_terminal(self, id: str, cmdline: Optional[str] = None):
+    async def create_terminal(self, terminal_id: str, cmdline: Optional[str] = None):
         if cmdline is None:
             cmdline = await self.get_default_shell()
 
         print("cmdline!!!!", cmdline)
         flags = await self._get_terminal_flags()
 
-        if self._terminal_sessions.get(id) is None:
-            self._terminal_sessions[id] = Terminal(cmdline, **flags)
+        if self._terminal_sessions.get(terminal_id) is None:
+            self._terminal_sessions[terminal_id] = Terminal(cmdline, **flags)
 
-    async def remove_terminal(self, id: str):
-        if self._terminal_sessions.get(id) is not None:
-            terminal: Terminal = self._terminal_sessions[id]
+    async def remove_terminal(self, terminal_id: str):
+        if self._terminal_sessions.get(terminal_id) is not None:
+            terminal: Terminal = self._terminal_sessions[terminal_id]
             await terminal.shutdown()
-            del self._terminal_sessions[id]
+            del self._terminal_sessions[terminal_id]
 
-    def get_terminal(self, id) -> Optional[Terminal]:
-        return self._terminal_sessions.get(id)
+    def get_terminal(self, terminal_id) -> Optional[Terminal]:
+        return self._terminal_sessions.get(terminal_id)
 
     def get_terminal_ids(self) -> List[str]:
         return self._terminal_sessions.keys()
 
-    def set_terminal_title(self, id, title):
-        term = self.get_terminal(id)
+    def set_terminal_title(self, terminal_id, title):
+        term = self.get_terminal(terminal_id)
         if term is not None:
             term.title = title
 
@@ -182,8 +182,8 @@ class DeckyTerminal:
         else:
             await ws.close()
 
-    async def terminal_handler(self, ws: server.WebSocketServerProtocol, id: str):
-        terminal = self.get_terminal(id)
+    async def terminal_handler(self, ws: server.WebSocketServerProtocol, terminal_id: str):
+        terminal = self.get_terminal(terminal_id)
 
         if terminal is not None:
             terminal.add_subscriber(ws)

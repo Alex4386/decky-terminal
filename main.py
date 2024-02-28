@@ -16,44 +16,44 @@ class Plugin:
         terminals = Plugin.decky_terminal.get_terminals()
         output = []
 
-        for id, terminal in terminals.items():
+        for terminal_id, terminal in terminals.items():
             result = terminal.serialize()
             output.append(
                 dict(
-                    id=id,
+                    id=terminal_id,
                     **result,
                 )
             )
 
         return output
 
-    async def get_terminal(self, id: str) -> Optional[dict]:
-        terminal = Plugin.decky_terminal.get_terminal(id)
+    async def get_terminal(self, terminal_id: str) -> Optional[dict]:
+        terminal = Plugin.decky_terminal.get_terminal(terminal_id)
         if terminal is None:
             return None
 
         return terminal.serialize()
 
-    async def set_terminal_title(self, id: str, title: str) -> bool:
-        Plugin.decky_terminal.set_terminal_title(id, title)
+    async def set_terminal_title(self, terminal_id: str, title: str) -> bool:
+        Plugin.decky_terminal.set_terminal_title(terminal_id, title)
 
-    async def create_terminal(self, id=None) -> bool:
-        if id is None:
-            id = "term_" + str(random.randint(100, 999))
+    async def create_terminal(self, terminal_id=None) -> bool:
+        if terminal_id is None:
+            terminal_id = "term_" + str(random.randint(100, 999))
 
-        await Plugin.decky_terminal.create_terminal(id)
+        await Plugin.decky_terminal.create_terminal(terminal_id)
         return True
 
-    async def remove_terminal(self, id) -> bool:
+    async def remove_terminal(self, terminal_id) -> bool:
         try:
-            await Plugin.decky_terminal.remove_terminal(id)
+            await Plugin.decky_terminal.remove_terminal(terminal_id)
             return True
         except:
             return False
 
-    async def change_terminal_window_size(self, id, rows: int, cols: int) -> bool:
+    async def change_terminal_window_size(self, terminal_id, rows: int, cols: int) -> bool:
         try:
-            terminal = Plugin.decky_terminal.get_terminal(id)
+            terminal = Plugin.decky_terminal.get_terminal(terminal_id)
             if terminal is not None:
                 await terminal.change_window_size(rows, cols)
                 return True
