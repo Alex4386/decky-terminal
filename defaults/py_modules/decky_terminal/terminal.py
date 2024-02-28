@@ -44,11 +44,11 @@ class Terminal:
         self.flags = kwargs
 
     def _calculate_sync_size(self):
-        min = self.cols * self.rows
-        if min < 1000:
+        size = self.cols * self.rows
+        if size < 1000:
             return 1000
         else:
-            return min * 5
+            return size * 5
 
     # SERIALIZE ============================================
     def serialize(self) -> dict:
