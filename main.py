@@ -1,12 +1,5 @@
-import sys
-import asyncio
 import random
 from typing import List, Optional
-
-try:
-    import decky_plugin
-except ImportError:
-    pass
 
 try:
     from decky_terminal import DeckyTerminal
