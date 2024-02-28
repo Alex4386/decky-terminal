@@ -12,6 +12,7 @@ from websockets import server
 
 from .common import Common
 from .terminal import Terminal
+from .nato import phoneticize
 
 
 class DeckyTerminal:
@@ -129,6 +130,7 @@ class DeckyTerminal:
 
         if self._terminal_sessions.get(terminal_id) is None:
             self._terminal_sessions[terminal_id] = Terminal(cmdline, **flags)
+            self._terminal_sessions[terminal_id].title = phoneticize(terminal_id[0:4])
 
     async def remove_terminal(self, terminal_id: str):
         if self._terminal_sessions.get(terminal_id) is not None:
