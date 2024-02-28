@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Dict, Optional, TypeVar, Callable
+from typing import Callable, Dict, Optional, TypeVar
 
 # Why does the Python generic work this way?
 _T = TypeVar("_T")
