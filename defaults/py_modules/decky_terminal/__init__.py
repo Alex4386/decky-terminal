@@ -4,6 +4,7 @@ import os
 import platform
 import random
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from decky_plugin import DECKY_PLUGIN_SETTINGS_DIR
 from websockets import server
@@ -170,12 +171,8 @@ class DeckyTerminal:
     # SERVER HANDLER ========================================
     async def handler(self, ws: server.WebSocketServerProtocol, path: str):
         if path.startswith("/v1/terminals/"):
-            splitted = path.split("?", 1)
-
-            target_path = splitted[0]
-
-            # TODO: This parsing mechanism sucks - make it better
-            terminal_id = target_path.replace("/v1/terminals/", "", 1)
+            url = urlparse(path)
+            terminal_id = url.path.split("/")[-1]
             return await self.terminal_handler(ws, terminal_id)
         elif path == "/echo":
             return await self.echo_handler(ws)
