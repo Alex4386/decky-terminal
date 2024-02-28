@@ -49,7 +49,7 @@ class DeckyTerminal:
             return ["/bin/sh"]
 
     def _is_unix_shell_path(self, path: str) -> bool:
-        return len(path) > 0 and path.startswith("/") and not path.isspace()
+        return path.startswith("/")
 
     # CONFIG ================================================
     def get_config_filename(self) -> str:
