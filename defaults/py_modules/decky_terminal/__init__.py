@@ -173,7 +173,6 @@ class DeckyTerminal:
             splitted = path.split("?", 1)
 
             target_path = splitted[0]
-            query_string = None if len(splitted) == 1 else splitted[1]
             
             # TODO: This parsing mechanism sucks - make it better
             terminal_id = target_path.replace("/v1/terminals/", "", 1)
