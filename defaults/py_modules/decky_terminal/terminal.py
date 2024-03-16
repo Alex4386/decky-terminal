@@ -210,7 +210,7 @@ class Terminal:
         return self._is_process_started() and self.process.returncode is None
 
     def _is_process_completed(self):
-        return self._is_process_started() and self.process.returncode
+        return self._is_process_started() and self.process.returncode is not None
 
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
