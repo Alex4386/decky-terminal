@@ -18,8 +18,8 @@ dependencies:
     specifier: 5.0.0
     version: 5.0.0
   xterm-addon-attach:
-    specifier: ^0.8.0
-    version: 0.8.0(xterm@5.0.0)
+    specifier: ^0.9.0
+    version: 0.9.0(xterm@5.0.0)
   xterm-addon-fit:
     specifier: 0.6.0
     version: 0.6.0(xterm@5.0.0)
@@ -973,8 +973,8 @@ packages:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
     dev: true
 
-  /xterm-addon-attach@0.8.0(xterm@5.0.0):
-    resolution: {integrity: sha512-k8N5boSYn6rMJTTNCgFpiSTZ26qnYJf3v/nJJYexNO2sdAHDN3m1ivVQWVZ8CHJKKnZQw1rc44YP2NtgalWHfQ==}
+  /xterm-addon-attach@0.9.0(xterm@5.0.0):
+    resolution: {integrity: sha512-NykWWOsobVZPPK3P9eFkItrnBK9Lw0f94uey5zhqIVB1bhswdVBfl+uziEzSOhe2h0rT9wD0wOeAYsdSXeavPw==}
     peerDependencies:
       xterm: ^5.0.0
     dependencies:

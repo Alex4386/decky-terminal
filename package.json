@@ -46,7 +46,7 @@
     "rollup-plugin-import-css": "^3.3.1",
     "xterm": "5.0.0",
     "xterm-addon-fit": "0.6.0",
-    "xterm-addon-attach": "^0.8.0"
+    "xterm-addon-attach": "^0.9.0"
   },
   "pnpm": {
     "peerDependencyRules": {
