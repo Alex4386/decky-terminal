@@ -11,7 +11,7 @@ import {
 } from "decky-frontend-lib";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
-import { AttachAddon } from "xterm-addon-attach";
+import { AttachAddon } from 'xterm-addon-attach';
 import { FitAddon } from 'xterm-addon-fit';
 import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
@@ -235,9 +235,9 @@ const Terminal: VFC = () => {
       const res = fitAddon.proposeDimensions();
       if (res?.rows && res.cols) {
         const colOffset = (Math.ceil(30 / xterm.options.fontSize));
+
         if (isFullScreen) xterm.resize(res.cols - colOffset, res.rows - 1)
         else xterm.resize(res.cols + colOffset, res.rows)
-        //
       }
 
       console.log('triggered fit!', xtermRef.current?.cols, xtermRef.current?.rows)
@@ -343,6 +343,21 @@ const Terminal: VFC = () => {
         <Focusable onClick={openKeyboard} style={{boxSizing: 'content-box'}}>
           <div ref={xtermDiv} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: "calc(100vh - "+getPadding()+")" }}></div>
         </Focusable>
+
+        {
+          true && 
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', padding: '1rem 0' }}>
+              <DialogButton onClick={() => wsRef.current?.send('\x1b[A')}>↑</DialogButton>
+              <DialogButton onClick={() => wsRef.current?.send('\x1b[B')}>↓</DialogButton>
+              <DialogButton onClick={() => wsRef.current?.send('\x1b[D')}>←</DialogButton>
+              <DialogButton onClick={() => wsRef.current?.send('\x1b[C')}>→</DialogButton>
+              
+              <DialogButton onClick={() => wsRef.current?.send('\x03')}>^C</DialogButton>
+              <DialogButton onClick={() => wsRef.current?.send('\x04')}>^C</DialogButton>
+              <DialogButton onClick={() => wsRef.current?.send('\x1a')}>^Z</DialogButton>
+            </div>
+        }
+
         {
           config?.handheld_mode &&
             <Focusable style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingTop: fullScreen ? '1em' : '2em' }}>

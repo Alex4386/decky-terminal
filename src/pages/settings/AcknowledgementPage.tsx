@@ -16,6 +16,12 @@ import {
             <p>&nbsp;</p>
             <p>The source code of this plugin is available at:</p>
             <p>https://github.com/Alex4386/decky-terminal</p>
+            <p>&nbsp;</p>
+            <p>DeckyTerminal is possible thanks to following contributors:</p>
+            <ul>
+                <li><b>Alex4386</b>: Main Developer</li>
+                <li><b>Gadgetoid</b>: Refactored Python backend</li>
+            </ul>
         </Focusable>
     );
   };
