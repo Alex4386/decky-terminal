@@ -16,6 +16,7 @@ import {
 import { useState, VFC } from "react";
 import { FaCog, FaPlus, FaTimesCircle } from "react-icons/fa";
 import TerminalGlobal from "./common/global";
+import { IconDialogButton } from "./common/components";
 
 // interface AddMethodArgs {
 //   left: number;
@@ -56,7 +57,6 @@ const SidePanel: VFC = ({}) => {
       "get_terminals",
       {}
     );
-    console.log('Fetched Terminal', result);
 
     if (result.success) {
       setResult(result.result)
@@ -78,12 +78,12 @@ const SidePanel: VFC = ({}) => {
     } 
   }
 
-  const removeTerminal = async (id: string) => {
+  const removeTerminal = async (terminal_id: string) => {
     const serverAPI = TerminalGlobal.getServer();
 
     const result = await serverAPI.callPluginMethod<{}, boolean>(
       "remove_terminal",
-      { id }
+      { terminal_id }
     );
 
     if (result.success) {
@@ -106,12 +106,12 @@ const SidePanel: VFC = ({}) => {
             <span>Add Terminal</span>
           </div>
         </DialogButton>
-        <DialogButton style={{ minWidth: '0', width: '50px', padding: '10px' }} onClick={() => {
+        <IconDialogButton onClick={() => {
           Router.CloseSideMenus();
           Router.Navigate("/decky-terminal/settings");
         }}>
           <FaCog />
-        </DialogButton>
+        </IconDialogButton>
       </Focusable>
     </Field>
     <PanelSection title="Active Terminals">
@@ -135,7 +135,7 @@ const SidePanel: VFC = ({}) => {
                 { terminal.title ?? terminal.id }
               </DialogButton>
 
-              <DialogButton
+              <IconDialogButton
                 onClick={() => {
                   removeTerminal(terminal.id)
                 }}
@@ -144,12 +144,11 @@ const SidePanel: VFC = ({}) => {
                   justifyContent: 'center',
                   alignItems: 'center',
                   padding: '5px',
-                  width: '50px', 
                   minWidth: 'auto',
                 }}
               >
                 <FaTimesCircle />
-              </DialogButton>
+              </IconDialogButton>
             </Focusable>
           </Field>
         )

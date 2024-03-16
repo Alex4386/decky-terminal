@@ -12,9 +12,7 @@ const SettingsPage: VFC = () => {
 
     const getShells = async () => {
         const serverAPI = TerminalGlobal.getServer()
-        console.log('getShells triggered')
         const shells = await serverAPI.callPluginMethod<{}, string[]>("get_shells", {});
-        console.log('getShells', shells);
         if (shells.success) {
             setShells(shells.result)
         } else {
@@ -25,7 +23,6 @@ const SettingsPage: VFC = () => {
     const getConfig = async () => {
         const serverAPI = TerminalGlobal.getServer()
         const config = await serverAPI.callPluginMethod<{}, string[]>("get_config", {});
-        console.log('getConfig', config);
         if (config.success) {
             setConfig(config.result)
         }
@@ -92,6 +89,12 @@ const SettingsPage: VFC = () => {
         })
     }
 
+    const setExtraKeys = async (enabled: boolean) => {
+        await appendConfig({
+            extra_keys: enabled,
+        })
+    }
+
     const setUseDisplay = async (enabled: boolean) => {
         await appendConfig({
             use_display: enabled,
@@ -99,8 +102,6 @@ const SettingsPage: VFC = () => {
     }
 
     useEffect(() => {
-        console.log('Fetching Settings')
-
         if (!shells || shells.length === 0) getShells();
         if (!config) getConfig();
 
@@ -197,17 +198,35 @@ const SettingsPage: VFC = () => {
             <Focusable
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
-                    <div className={staticClasses.Text}>Use Display</div>
-                    <div className={staticClasses.Label}>Set Display environment variable to allow GUI Applications to run</div>
+                    <div className={staticClasses.Text}>Enable Extra keys</div>
+                    <div className={staticClasses.Label}>Add a row for arrow keys and Ctrl+C,D,Z</div>
                 </div>
                 <div style={{ minWidth: '200px' }}>
                     <ToggleField
                         disabled={false}
-                        checked={config?.use_display ?? false}
-                        onChange={(e) => {setUseDisplay(e)}}
+                        checked={config?.extra_keys ?? false}
+                        onChange={(e) => {setExtraKeys(e)}}
                         bottomSeparator={"none"} />
                 </div>
             </Focusable>
+            {
+                /*
+                    <Focusable
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                        <div>
+                            <div className={staticClasses.Text}>Use Display</div>
+                            <div className={staticClasses.Label}>Set Display environment variable to allow GUI Applications to run</div>
+                        </div>
+                        <div style={{ minWidth: '200px' }}>
+                            <ToggleField
+                                disabled={false}
+                                checked={config?.use_display ?? false}
+                                onChange={(e) => {setUseDisplay(e)}}
+                                bottomSeparator={"none"} />
+                        </div>
+                    </Focusable>
+                */
+            }
         </Focusable>
     );
   };

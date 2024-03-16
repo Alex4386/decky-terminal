@@ -1,0 +1,37 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Deploy
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: DEPLOYMENT
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup environment
+        run: |
+          ./.vscode/setup.sh
+
+      # Set up BuildKit Docker container builder to be able to build
+      # multi-platform images and export cache
+      # https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+
+      - name: Build with Decky CLI
+        run: |
+          ./.vscode/build.sh
+      
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          # Artifact name
+          name: DeckyTerminal Build
+          # A file, directory or wildcard pattern that describes what to upload
+          path: out/*.zip
