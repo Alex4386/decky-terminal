@@ -122,6 +122,10 @@ class Terminal:
     def get_terminal_env(self):
         result = dict(os.environ)
 
+        # Disable Steam internal library paths since it interferes with applications.
+        # TODO: Add option to enable Steam-internal libraries
+        del result["LD_LIBRARY_PATH"]
+
         result.update({
             "TERM": "xterm-256color",
             "PWD": result["HOME"],
