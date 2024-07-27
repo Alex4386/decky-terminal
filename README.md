@@ -1,6 +1,9 @@
 <h1 align="center">Decky Terminal</h1>
 <p align="center">A Missing Terminal plugin that turns your Steam Deck into Portable Linux Battlestation.</p>
 
+<p align="center"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fplugins.deckbrew.xyz%2Fplugins&query=%24%5B%3F(%40.name%20%3D%3D%20'Decky%20Terminal')%5D.downloads&suffix=%20installs&label=decky&color=3ea6a3" /></p>
+
+
 ![image](https://github.com/Alex4386/decky-terminal/assets/27724108/a8fa3320-eb55-4890-9885-5aa88ba89f99)  
 
 ## Why do I need it?
