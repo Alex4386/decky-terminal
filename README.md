@@ -18,6 +18,7 @@ Here are the cases that Decky Terminal can help you out!
   <sup>(GNU/Screen installed seperately, RS232 to USB converter sold seperately)</sup>
 * [Decide NPC's fate](https://www.youtube.com/watch?v=cLT465WM8uw)
 * [Play BadApple](https://www.youtube.com/watch?v=pSygAG933Yw)
+* [Fix broken IME inputs](https://gall.dcinside.com/mgallery/board/view/?id=umpc&no=65008)
 
 ## TODO
 * **PROPERLY** implement on-screen keyboard support (currently implemented via workaround)
