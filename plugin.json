@@ -4,7 +4,7 @@
   "flags": [],
   "publish": {
     "tags": ["terminal"],
-    "description": "A Missing Terminal plugin that turns your Steam Deck into Portable Linux Battlestation.",
+    "description": "Your terminal is going places. The missing terminal emulator for \"game-mode\".",
     "image": "https://github.com/Alex4386/decky-terminal/assets/27724108/35fa0f98-1d74-4689-be35-233ef4ed6cd2"
   }
 }
