@@ -10,8 +10,8 @@ import {
 } from "@decky/ui";
 import { call, addEventListener, removeEventListener } from "@decky/api";
 import { VFC, useRef, useState, useEffect } from "react";
-import { Terminal as XTermTerminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
+import { Terminal as XTermTerminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
 import XTermCSS from "../common/xterm_css";
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaChevronCircleLeft, FaExpand, FaKeyboard, FaTerminal } from "react-icons/fa";
 import { IconDialogButton } from "../common/components";
@@ -53,7 +53,7 @@ const Terminal: VFC = () => {
   }
 
   const connectIO = async () => {
-    const xterm = xtermRef.current
+    const xterm = xtermRef.current as XTermTerminal;
     const localConfig = await getConfig()
 
     if (localConfig && xterm) {
@@ -86,12 +86,12 @@ const Terminal: VFC = () => {
     await call<[terminal_id: string], void>("subscribe_terminal", id);
 
     if (xterm) {
-      xterm.onTitleChange((title) => {
+      xterm.onTitleChange((title: string) => {
         setTitle(title)
         updateTitle(title)
       });
 
-      xterm.onData((data) => {
+      xterm.onData((data: string) => {
         sendInput(data);
       });
 
@@ -105,7 +105,15 @@ const Terminal: VFC = () => {
 
     // Set the loaded state to true after xterm is initialized
     setLoaded(true);
+  };
 
+  const initializeTerminal = async () => {
+    const xterm = xtermRef.current as XTermTerminal;
+    if (!xterm) return;
+
+    const div = xtermDiv.current;
+    if (!div) return;
+    
     await xterm?.open(xtermDiv.current as HTMLDivElement);
     // wait for it!
     await (new Promise<void>((res) => setTimeout(res, 1)));
@@ -129,6 +137,12 @@ const Terminal: VFC = () => {
       }
     }
   };
+
+  useEffect(() => {
+    if (xtermRef.current && xtermDiv.current) {
+      initializeTerminal();
+    }
+  }, [xtermDiv, xtermRef]);
 
   const setWindowSize = async (rows: number, cols: number) => {
     await call<[terminal_id: string, rows: number, cols: number], number>(
@@ -202,7 +216,8 @@ const Terminal: VFC = () => {
       xtermRef.current.loadAddon(fitAddon)
       const res = fitAddon.proposeDimensions();
       if (res?.rows && res.cols) {
-        const colOffset = (Math.ceil(30 / xterm.options.fontSize));
+        const fontSize =  xterm.options.fontSize ?? 12;
+        const colOffset = (Math.ceil(30 / fontSize));
 
         if (isFullScreen) xterm.resize(res.cols - colOffset, res.rows - 1)
         else xterm.resize(res.cols + colOffset, res.rows)
