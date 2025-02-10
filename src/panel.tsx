@@ -1,21 +1,13 @@
 import {
-  ButtonItem,
-  definePlugin,
   DialogButton,
-  Menu,
-  MenuItem,
   Field,
   Focusable,
   PanelSection,
-  PanelSectionRow,
   Router,
-  showContextMenu,
-  staticClasses,
 } from "@decky/ui";
 import { useState, VFC } from "react";
 import { FaCog, FaPlus, FaTimesCircle } from "react-icons/fa";
 import { call } from "@decky/api";
-import TerminalGlobal from "./common/global";
 import { IconDialogButton } from "./common/components";
 
 // interface AddMethodArgs {

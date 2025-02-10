@@ -120,7 +120,7 @@ const Terminal: VFC = () => {
       const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
       if (inputBox.tabIndex !== -1) {
         inputBox.tabIndex = -1;
-        inputBox.addEventListener("click", (e) => {
+        inputBox.addEventListener("click", () => {
           setFocusToTerminal();
         })
       }
