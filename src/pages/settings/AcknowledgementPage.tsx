@@ -1,6 +1,6 @@
 import {
     Focusable,
-  } from "decky-frontend-lib";
+  } from "@decky/ui";
   import { VFC } from "react";
   
   
