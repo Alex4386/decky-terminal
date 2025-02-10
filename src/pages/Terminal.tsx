@@ -8,7 +8,7 @@ import {
   GamepadButton,
   staticClasses,
 } from "@decky/ui";
-import { call, addEventListener } from "@decky/api";
+import { call, addEventListener, removeEventListener } from "@decky/api";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
@@ -81,6 +81,9 @@ const Terminal: VFC = () => {
       const title = (terminalResult as any)?.title;
       setTitle(title)
     }
+
+    // subscribe to terminal
+    await call<[terminal_id: string], void>("subscribe_terminal", id);
 
     if (xterm) {
       xterm.onTitleChange((title) => {
@@ -168,8 +171,15 @@ const Terminal: VFC = () => {
     return () => {
       // Clean up event listener
       if (eventListenerRef.current) {
-        eventListenerRef.current();
+        removeEventListener(`terminal_output#${id}`, eventListenerRef.current as any);
         eventListenerRef.current = null;
+      }
+
+      try {
+        // Unsubscribe from terminal
+        call<[terminal_id: string], void>("unsubscribe_terminal", id);
+      } catch(e) {
+        console.error('unregister error', e)
       }
 
       // Dispose xterm instance when component is unmounted
