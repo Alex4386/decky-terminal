@@ -5,11 +5,8 @@ from decky_terminal import DeckyTerminal
 class Plugin:
     decky_terminal = DeckyTerminal()
 
-    async def is_server_running(self) -> bool:
+    async def is_running(self) -> bool:
         return Plugin.decky_terminal.is_running()
-
-    async def get_server_port(self) -> int:
-        return Plugin.decky_terminal.get_server_port()
 
     async def get_terminals(self) -> List[dict]:
         terminals = Plugin.decky_terminal.get_terminals()
@@ -39,6 +36,30 @@ class Plugin:
     async def remove_terminal(self, terminal_id) -> bool:
         try:
             await Plugin.decky_terminal.remove_terminal(terminal_id)
+            return True
+        except:
+            return False
+        
+    async def send_terminal_input(self, terminal_id: str, data: str) -> bool:
+        try:
+            terminal = Plugin.decky_terminal.get_terminal(terminal_id)
+            if terminal is not None:
+                await terminal.send_input(data)
+                return True
+            return False
+        except:
+            return False
+        
+    async def subscribe_terminal(self, terminal_id: str) -> bool:
+        try:
+            await Plugin.decky_terminal.subscribe(terminal_id)
+            return True
+        except:
+            return False
+    
+    async def unsubscribe_terminal(self, terminal_id: str) -> bool:
+        try:
+            await Plugin.decky_terminal.unsubscribe(terminal_id)
             return True
         except:
             return False

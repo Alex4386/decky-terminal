@@ -1,23 +1,21 @@
 import {
   definePlugin,
-  ServerAPI,
   staticClasses,
-} from "decky-frontend-lib";
+} from "@decky/ui";
 import { FaTerminal } from "react-icons/fa";
 import { registerRoutes, unregisterRoutes } from "./routes";
 import SidePanel from "./panel";
-import TerminalGlobal from "./common/global";
 
-export default definePlugin((serverApi: ServerAPI) => {
-  TerminalGlobal.setServer(serverApi);
-  registerRoutes(serverApi.routerHook);
+export default definePlugin(() => {
+  registerRoutes();
 
   return {
-    title: <div className={staticClasses.Title}>Decky Terminal</div>,
+    name: "Decky Terminal",
+    titleView: <div className={staticClasses.Title}>Decky Terminal</div>,
     content: <SidePanel />,
     icon: <FaTerminal />,
     onDismount() {
-      unregisterRoutes(serverApi.routerHook)
+      unregisterRoutes()
     },
   };
 });

@@ -6,35 +6,33 @@ import {
   TextField,
   Focusable,
   GamepadButton,
-  Field,
   staticClasses,
-} from "decky-frontend-lib";
+} from "@decky/ui";
+import { call, addEventListener } from "@decky/api";
 import { VFC, useRef, useState, useEffect } from "react";
 import { Terminal as XTermTerminal } from 'xterm';
-import { AttachAddon } from 'xterm-addon-attach';
 import { FitAddon } from 'xterm-addon-fit';
-import TerminalGlobal from "../common/global";
 import XTermCSS from "../common/xterm_css";
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaChevronCircleLeft, FaExpand, FaKeyboard, FaTerminal } from "react-icons/fa";
 import { IconDialogButton } from "../common/components";
 
 const Terminal: VFC = () => {
-
-  // I can't find RouteComponentParams :skull:
   const { id } = useParams() as any;
   const [loaded, setLoaded] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [title, setTitle] = useState<string | null>(null);
   const [config, setConfig] = useState<Record<string, any> | null>(null);
   const [openFunctionRow, setOpenFunctionRow] = useState<boolean>(false);
-  let prevId: string|undefined = undefined;
 
   // Create a ref to hold the xterm instance
   const xtermRef = useRef<XTermTerminal | null>(null);
   const xtermDiv = useRef<HTMLDivElement | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-
   const fakeInputRef = useRef<typeof TextField | null>(null);
+  const eventListenerRef = useRef<Function | null>(null);
+
+  const sendInput = async (input: string) => {
+    await call<[terminal_id: string, input: string], void>("send_terminal_input", id, input);
+  };
 
   const wrappedConnectIO = async () => {
     try {
@@ -45,32 +43,17 @@ const Terminal: VFC = () => {
   }
 
   const getConfig = async (): Promise<Record<string, any>|undefined> => {
-    const serverAPI = TerminalGlobal.getServer()
-    const config = await serverAPI.callPluginMethod<{}, string[]>("get_config", {});
-
-    if (config.success) {
-        setConfig(config.result)
-
-        return config.result;
-    }
-
-    return;
+    const config = await call<[], string[]>("get_config");
+    setConfig(config);
+    return config;
   }
 
-  const updateTitle = async (title: string): Promise<Record<string, any>|undefined> => {
-    const serverAPI = TerminalGlobal.getServer()
-    await serverAPI.callPluginMethod<{ terminal_id: string, title: string }, string[]>("set_terminal_title", { terminal_id: id, title });
-
-    return;
+  const updateTitle = async (title: string): Promise<void> => {
+    await call<[terminal_id: string, title: string], string[]>("set_terminal_title", id, title);
   }
 
   const connectIO = async () => {
-    prevId = id;
-    setTitle(id);
-
     const xterm = xtermRef.current
-
-    const serverAPI = TerminalGlobal.getServer()
     const localConfig = await getConfig()
 
     if (localConfig && xterm) {
@@ -88,85 +71,69 @@ const Terminal: VFC = () => {
       }
     }
 
-    const terminalResult = await serverAPI.callPluginMethod<{
-      terminal_id: string
-    }, number>("get_terminal", { terminal_id: id });
-    if (terminalResult.success) {
-      if (terminalResult.result === null) {
-        xterm?.write("--- Terminal Not Found ---");
-        history.back();
-      }
-      if ((terminalResult.result as any)?.title) {
-        const title = (terminalResult.result as any)?.title;
-        setTitle(title)
-      }
+    const terminalResult = await call<[terminal_id: string], number>("get_terminal", id);
+    if (terminalResult === null) {
+      xterm?.write("--- Terminal Not Found ---");
+      window.location.href = '/';
+      return;
+    }
+    if ((terminalResult as any)?.title) {
+      const title = (terminalResult as any)?.title;
+      setTitle(title)
     }
 
-    const result = await serverAPI.callPluginMethod<{}, number>("get_server_port", {});
-    if (result.success) {
-      const url = new URL('ws://127.0.0.1:'+result.result+'/v1/terminals/'+id);
-      const ws = new WebSocket(url);
+    if (xterm) {
+      xterm.onTitleChange((title) => {
+        setTitle(title)
+        updateTitle(title)
+      });
 
-      if (wsRef.current !== null) {
-        try {
-          wsRef.current.close()
-        } catch(e) {}
-      }
+      xterm.onData((data) => {
+        sendInput(data);
+      });
 
-      wsRef.current = ws;
-      ws.onclose = () => {
-        xterm?.write("\r\n--- Terminal Disconnected ---")
-      }
+      // Set up event listener for terminal output
+      const unsubscribe = addEventListener<[ArrayBuffer]>(`terminal_output#${id}`, function terminalOutput(data) {
+        xterm.write(new Uint8Array(data));
+      });
 
-      if (xterm) {
-        xterm.onTitleChange((title) => {
-          setTitle(title)
-          updateTitle(title)
+      eventListenerRef.current = unsubscribe;
+    }
+
+    // Set the loaded state to true after xterm is initialized
+    setLoaded(true);
+
+    await xterm?.open(xtermDiv.current as HTMLDivElement);
+    // wait for it!
+    await (new Promise<void>((res) => setTimeout(res, 1)));
+    fitToScreen()
+
+    if (xterm) {
+      xterm.onResize((e) => {
+        setWindowSize(e.rows, e.cols);
+      });
+
+      await setWindowSize(xterm.rows, xterm.cols);
+    }
+    
+    if (fakeInputRef.current) {
+      const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
+      if (inputBox.tabIndex !== -1) {
+        inputBox.tabIndex = -1;
+        inputBox.addEventListener("click", (e) => {
+          setFocusToTerminal();
         })
-      }
-      
-      const attachAddon = new AttachAddon(ws);
-      xterm?.loadAddon(attachAddon);
-
-      // Set the loaded state to true after xterm is initialized
-      setLoaded(true);
-
-      await xterm?.open(xtermDiv.current as HTMLDivElement);
-      // wait for it!
-      await (new Promise<void>((res) => setTimeout(res, 1)));
-      fitToScreen()
-
-      if (xterm) {
-        xterm.onResize((e) => {
-          setWindowSize(e.rows, e.cols);
-        });
-
-        await setWindowSize(xterm.rows, xterm.cols);
-      }
-      
-      if (fakeInputRef.current) {
-        const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
-        if (inputBox.tabIndex !== -1) {
-          inputBox.tabIndex = -1;
-          inputBox.addEventListener("click", (e) => {
-            setFocusToTerminal();
-          })
-        }
       }
     }
   };
 
   const setWindowSize = async (rows: number, cols: number) => {
-    const serverAPI = TerminalGlobal.getServer()
-    const result = await serverAPI.callPluginMethod<{
-      terminal_id: string,
-      rows: number,
-      cols: number,
-    }, number>("change_terminal_window_size", {
-      terminal_id: id,
+    await call<[terminal_id: string, rows: number, cols: number], number>(
+      "change_terminal_window_size",
+      id,
       rows,
-      cols,
-    });
+      cols
+    );
   }
 
   const openKeyboard = () => {
@@ -199,20 +166,21 @@ const Terminal: VFC = () => {
 
     // Clean up function
     return () => {
+      // Clean up event listener
+      if (eventListenerRef.current) {
+        eventListenerRef.current();
+        eventListenerRef.current = null;
+      }
+
       // Dispose xterm instance when component is unmounted
       if (xtermRef.current) {
         xtermRef.current.dispose();
         xtermRef.current = null;
       }
 
-      if (wsRef.current) {
-        wsRef.current.close()
-        wsRef.current = null;
-      }
-
       setFullScreen(false)
     };
-  }, [ id ]);
+  }, [id]);
 
   const fitToScreen = (_fullScreen?: boolean) => {
     const isFullScreen = _fullScreen === undefined ? fullScreen : _fullScreen
@@ -234,7 +202,6 @@ const Terminal: VFC = () => {
 
   const startFullScreen = () => {
     setFullScreen(true);
-    //handleResize()
     setTimeout(() => {
       try {
         fitToScreen(true)
@@ -251,21 +218,21 @@ const Terminal: VFC = () => {
       let command: string | undefined = undefined;
       switch (evt.detail.button) {
         case GamepadButton.DIR_UP:
-          command = '\x1b[A';
+          command = '[A';
           break;
         case GamepadButton.DIR_DOWN:
-          command = '\x1b[B';
+          command = '[B';
           break;
         case GamepadButton.DIR_RIGHT:
-          command = '\x1b[C';
+          command = '[C';
           break;
         case GamepadButton.DIR_LEFT:
-          command = '\x1b[D';
+          command = '[D';
           break;
       }
 
-      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED && command) {
-        wsRef.current.send(command)
+      if (command) {
+        sendInput(command);
 
         // refocus xterm
         if (config?.use_dpad && !fullScreen) {
@@ -341,25 +308,25 @@ const Terminal: VFC = () => {
           (config?.extra_keys && (!fullScreen || config?.handheld_mode)) && 
             <Focusable style={{ overflowX: 'scroll', display: 'flex', gap: '1rem', padding: '.5rem', width: 'fit-content', maxWidth: 'calc(100% - 2rem)', margin: '0 auto' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem' }}>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b')}>Esc</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('')}>Esc</IconDialogButton>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
                 {
                   openFunctionRow &&
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '.25rem'}}>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1P')}>F1</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1Q')}>F2</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1R')}>F3</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1S')}>F4</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[15~')}>F5</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[17~')}>F6</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[18~')}>F7</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[19~')}>F8</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[20~')}>F9</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[21~')}>F10</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[23~')}>F11</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[24~')}>F12</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[1P')}>F1</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[1Q')}>F2</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[1R')}>F3</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[1S')}>F4</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[15~')}>F5</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[17~')}>F6</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[18~')}>F7</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[19~')}>F8</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[20~')}>F9</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[21~')}>F10</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[23~')}>F11</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('[24~')}>F12</IconDialogButton>
                     </div>
                 }
 
@@ -372,17 +339,17 @@ const Terminal: VFC = () => {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[D')}><FaArrowLeft /></IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[A')}><FaArrowUp /></IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[B')}><FaArrowDown /></IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[C')}><FaArrowRight /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('[D')}><FaArrowLeft /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('[A')}><FaArrowUp /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('[B')}><FaArrowDown /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('[C')}><FaArrowRight /></IconDialogButton>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x03')}>^C</IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x04')}>^D</IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x12')}>^R</IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1a')}>^Z</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('')}>^C</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('')}>^D</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('')}>^R</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('')}>^Z</IconDialogButton>
               </div>
             </Focusable>
         }

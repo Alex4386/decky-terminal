@@ -1,9 +1,9 @@
+import { call } from "@decky/api";
 import {
     Dropdown,
     Focusable, SteamSpinner, TextField, ToggleField, staticClasses,
-  } from "decky-frontend-lib";
+  } from "@decky/ui";
 import { VFC, useEffect, useState } from "react";
-import TerminalGlobal from "../../common/global";
   
 
 const SettingsPage: VFC = () => {
@@ -11,47 +11,30 @@ const SettingsPage: VFC = () => {
     const [shells, setShells] = useState<string[]>([]);
 
     const getShells = async () => {
-        const serverAPI = TerminalGlobal.getServer()
-        const shells = await serverAPI.callPluginMethod<{}, string[]>("get_shells", {});
-        if (shells.success) {
-            setShells(shells.result)
-        } else {
+        try {
+            const shells = await call<[], string[]>("get_shells");
+            setShells(shells);
+        } catch(e) {
             setShells(["/bin/bash"])
         }
     }
 
     const getConfig = async () => {
-        const serverAPI = TerminalGlobal.getServer()
-        const config = await serverAPI.callPluginMethod<{}, string[]>("get_config", {});
-        if (config.success) {
-            setConfig(config.result)
-        }
+        const result = await call<[], string[]>("get_config");
+        setConfig(result);
     }
 
     const appendConfig = async (config: Record<string, any>) => {
-        const serverAPI = TerminalGlobal.getServer()
-        const configApplied = await serverAPI.callPluginMethod<{
-            config: Record<string, any>
-        }, string[]>("append_config", {
-            config,
-        });
-
-        if (configApplied.success) {
-            getConfig()
-        }
+        const result = await call<[config: Record<string, any>], string[]>("append_config", config);
+        getConfig();
     }
 
     const setShell = async (shell: string) => {
-        const serverAPI = TerminalGlobal.getServer()
-        const configured = await serverAPI.callPluginMethod<{
-            shell: string
-        }, string[]>("set_default_shell", { shell });
-        if (configured.success) {
-            setConfig({
-                ...config,
-                default_shell: shell,
-            })
-        }
+        await call<[shell: string], string[]>("set_default_shell", shell);
+        setConfig({
+            ...config,
+            default_shell: shell,
+        });
     }
 
     const setFont = async (fontFamily: string) => {
