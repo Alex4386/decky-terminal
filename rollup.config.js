@@ -1,5 +1,14 @@
 import deckyPlugin from "@decky/rollup";
 
 export default deckyPlugin({
-  // Add your extra Rollup options here
-})
+  plugins: [
+    {
+      name: 'resolve-xterm',
+      resolveId(source) {
+        if (source.startsWith('@xterm/')) {
+          return null; // Let nodeResolve handle it
+        }
+      }
+    }
+  ]
+});
