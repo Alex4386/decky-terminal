@@ -49,6 +49,16 @@ class Plugin:
             return False
         except:
             return False
+
+    async def send_terminal_buffer(self, terminal_id: str) -> bool:
+        try:
+            terminal = Plugin.decky_terminal.get_terminal(terminal_id)
+            if terminal is not None:
+                await terminal.send_current_buffer()
+                return True
+            return False
+        except:
+            return False
         
     async def subscribe_terminal(self, terminal_id: str) -> bool:
         try:
@@ -90,10 +100,10 @@ class Plugin:
         return await Plugin.decky_terminal.set_default_shell(shell)
 
     async def _main(self):
-        await Plugin.decky_terminal.start_server()
+        pass
 
     async def _unload(self):
-        await Plugin.decky_terminal.stop_server()
+        pass
 
     async def _migration(self):
         pass

@@ -104,10 +104,6 @@ const Terminal: VFC = () => {
         setTitle(title)
       }
 
-      console.log('Subscribing to terminal...');
-      const res = await call<[terminal_id: string], void>("subscribe_terminal", id);
-      console.log('Terminal subscription:', res);
-
       console.log('Setting up xterm event handlers...');
       xterm.onTitleChange((title: string) => {
         console.log('Title changed:', title);
@@ -123,11 +119,19 @@ const Terminal: VFC = () => {
       });
       console.log('onData handler attached');
 
-      // Set up event listener for terminal output
+      // Set up event listener for terminal output first
       const unsubscribe = addEventListener<[ArrayBuffer]>(`terminal_output#${id}`, function terminalOutput(data) {
         console.log('Terminal output:', data);
         xterm.write(new Uint8Array(data));
       });
+
+      // Then subscribe to terminal and request initial buffer
+      console.log('Subscribing to terminal...');
+      const res = await call<[terminal_id: string], void>("subscribe_terminal", id);
+      console.log('Terminal subscription:', res);
+
+      // Request initial buffer
+      await call<[terminal_id: string], void>("send_terminal_buffer", id);
 
       eventListenerRef.current = unsubscribe;
       console.log('Terminal setup complete');

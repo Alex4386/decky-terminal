@@ -182,7 +182,7 @@ class Terminal:
     # BROADCAST =============================================
     async def broadcast_subscribers(self, data: bytes):
         if self.is_subscribed:
-            decky.emit("terminal_output#"+self.id, data)
+            await decky.emit("terminal_output#"+self.id, data)
 
     async def send_current_buffer(self):
         await self.broadcast_subscribers(bytes(self.buffer))
