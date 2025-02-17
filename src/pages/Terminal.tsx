@@ -32,6 +32,7 @@ const Terminal: VFC = () => {
 
   const sendInput = async (input: string) => {
     await call<[terminal_id: string, input: string], void>("send_terminal_input", id, input);
+    console.log('sending Input:', input);
   };
 
   const wrappedConnectIO = async () => {
@@ -53,79 +54,134 @@ const Terminal: VFC = () => {
   }
 
   const connectIO = async () => {
-    const xterm = xtermRef.current as XTermTerminal;
-    const localConfig = await getConfig()
+    try {
+      console.log('connectIO started');
+      const xterm = xtermRef.current as XTermTerminal;
+      if (!xterm) {
+        throw new Error('xterm not initialized');
+      }
 
-    if (localConfig && xterm) {
-      if (localConfig.__version__ === 1) {
-        if (localConfig.font_family?.trim()) {
-          xterm.options.fontFamily = localConfig.font_family;
+      // First open xterm if not already open
+      if (!xterm.element) {
+        if (!xtermDiv.current) {
+          throw new Error('xtermDiv not available');
         }
+        console.log('Opening xterm first...');
+        await xterm.open(xtermDiv.current);
+        xterm.write('--- xterm test message ---\r\n');
+      }
 
-        if (localConfig.font_size) {
-          const fs = parseInt(localConfig.font_size);
-          if (!isNaN(fs) && fs > 0) {
-            xterm.options.fontSize = fs;
+      console.log('Getting config...');
+      const localConfig = await getConfig()
+      console.log('Config received:', localConfig);
+
+      if (localConfig && xterm) {
+        if (localConfig.__version__ === 1) {
+          if (localConfig.font_family?.trim()) {
+            xterm.options.fontFamily = localConfig.font_family;
+          }
+
+          if (localConfig.font_size) {
+            const fs = parseInt(localConfig.font_size);
+            if (!isNaN(fs) && fs > 0) {
+              xterm.options.fontSize = fs;
+            }
           }
         }
       }
-    }
 
-    const terminalResult = await call<[terminal_id: string], number>("get_terminal", id);
-    if (terminalResult === null) {
-      xterm?.write("--- Terminal Not Found ---");
-      window.location.href = '/';
-      return;
-    }
-    if ((terminalResult as any)?.title) {
-      const title = (terminalResult as any)?.title;
-      setTitle(title)
-    }
+      console.log('Getting terminal...');
+      const terminalResult = await call<[terminal_id: string], number>("get_terminal", id);
+      if (terminalResult === null) {
+        xterm?.write("--- Terminal Not Found ---");
+        window.location.href = '/';
+        return;
+      }
+      console.log('Terminal result:', terminalResult);
 
-    // subscribe to terminal
-    await call<[terminal_id: string], void>("subscribe_terminal", id);
+      if ((terminalResult as any)?.title) {
+        const title = (terminalResult as any)?.title;
+        setTitle(title)
+      }
 
-    if (xterm) {
+      console.log('Subscribing to terminal...');
+      const res = await call<[terminal_id: string], void>("subscribe_terminal", id);
+      console.log('Terminal subscription:', res);
+
+      console.log('Setting up xterm event handlers...');
       xterm.onTitleChange((title: string) => {
+        console.log('Title changed:', title);
         setTitle(title)
         updateTitle(title)
       });
 
+      // Debug: Log when event handler is attached
+      console.log('Attaching onData handler...');
       xterm.onData((data: string) => {
+        console.log('xterm onData triggered:', data);
         sendInput(data);
       });
+      console.log('onData handler attached');
 
       // Set up event listener for terminal output
       const unsubscribe = addEventListener<[ArrayBuffer]>(`terminal_output#${id}`, function terminalOutput(data) {
+        console.log('Terminal output:', data);
         xterm.write(new Uint8Array(data));
       });
 
       eventListenerRef.current = unsubscribe;
+      console.log('Terminal setup complete');
+
+    } catch (error) {
+      console.error('connectIO error:', error);
+      throw error; // Re-throw to be caught by wrappedConnectIO
     }
 
     // Set the loaded state to true after xterm is initialized
     setLoaded(true);
   };
 
+  // Initialize xterm and set up size handling
   const initializeTerminal = async () => {
+    console.log('Initializing terminal...');
     const xterm = xtermRef.current as XTermTerminal;
-    if (!xterm) return;
+    if (!xterm) {
+      console.error('No xterm instance available');
+      return;
+    }
 
     const div = xtermDiv.current;
-    if (!div) return;
-    
-    await xterm?.open(xtermDiv.current as HTMLDivElement);
-    // wait for it!
-    await (new Promise<void>((res) => setTimeout(res, 1)));
-    fitToScreen()
-
-    if (xterm) {
-      xterm.onResize((e) => {
-        setWindowSize(e.rows, e.cols);
-      });
-
-      await setWindowSize(xterm.rows, xterm.cols);
+    if (!div) {
+      console.error('No terminal div available');
+      return;
     }
+    
+    // 1. Set up FitAddon first so it's ready when terminal opens
+    console.log('Setting up FitAddon...');
+    const fitAddon = new FitAddon();
+    xterm.loadAddon(fitAddon);
+    
+    // 2. Open terminal and verify it's ready
+    console.log('Opening xterm...');
+    await xterm.open(div);
+    console.log('xterm opened, element:', xterm.element);
+    
+    // 3. Configure initial size and focus
+    console.log('Configuring terminal size...');
+    fitToScreen(); // This uses FitAddon to calculate proper dimensions
+    
+    // 4. Set up resize handler BEFORE setting window size to avoid race condition
+    xterm.onResize((e) => {
+      console.log('Terminal resized:', e.rows, e.cols);
+      setWindowSize(e.rows, e.cols);
+    });
+    
+    // 5. Set initial window size
+    await setWindowSize(xterm.rows, xterm.cols);
+    
+    // 6. Focus terminal after everything is set up
+    xterm.focus();
+    console.log('Terminal initialization complete');
     
     if (fakeInputRef.current) {
       const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
@@ -138,11 +194,39 @@ const Terminal: VFC = () => {
     }
   };
 
+  // First effect creates xterm instance
   useEffect(() => {
-    if (xtermRef.current && xtermDiv.current) {
-      initializeTerminal();
-    }
-  }, [xtermDiv, xtermRef]);
+    console.log('Creating xterm instance');
+    const xterm = new XTermTerminal({
+      //scrollback: 0,
+      allowProposedApi: true,
+      cursorBlink: true,
+    });
+    console.log('XTermTerminal instance created');
+    xtermRef.current = xterm;
+  }, []);
+
+  // Track initialization state
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    const connectTerminal = async () => {
+      console.log('Checking initialization state:', initializedRef.current);
+      if (initializedRef.current) {
+        console.log('Terminal already initialized');
+        return;
+      }
+      
+      console.log('Checking refs:', { xtermRef: !!xtermRef.current, xtermDiv: !!xtermDiv.current });
+      if (xtermRef.current && xtermDiv.current) {
+        console.log('Both refs ready, initializing terminal...');
+        initializedRef.current = true;
+        await initializeTerminal();
+        await wrappedConnectIO();
+      }
+    };
+    connectTerminal();
+  }, [xtermRef.current, xtermDiv.current]);
 
   const setWindowSize = async (rows: number, cols: number) => {
     await call<[terminal_id: string, rows: number, cols: number], number>(
@@ -174,14 +258,7 @@ const Terminal: VFC = () => {
   }
 
   useEffect(() => {
-    // Initialize xterm instance and attach it to a DOM element
-    const xterm = new XTermTerminal({
-      //scrollback: 0,
-    });
-    xtermRef.current = xterm;
-    wrappedConnectIO()
-
-    // Clean up function
+    // Clean up function only
     return () => {
       // Clean up event listener
       if (eventListenerRef.current) {
@@ -206,21 +283,31 @@ const Terminal: VFC = () => {
     };
   }, [id]);
 
+  // Track FitAddon instance globally so we don't create multiple instances
+  const fitAddonRef = useRef<FitAddon | null>(null);
+
   const fitToScreen = (_fullScreen?: boolean) => {
-    const isFullScreen = _fullScreen === undefined ? fullScreen : _fullScreen
+    const isFullScreen = _fullScreen === undefined ? fullScreen : _fullScreen;
     
     if (xtermRef.current) {
-      const xterm = xtermRef.current
+      const xterm = xtermRef.current;
 
-      const fitAddon = new FitAddon()
-      xtermRef.current.loadAddon(fitAddon)
-      const res = fitAddon.proposeDimensions();
+      // Use existing FitAddon or create new one
+      if (!fitAddonRef.current) {
+        console.log('Creating new FitAddon');
+        fitAddonRef.current = new FitAddon();
+        xterm.loadAddon(fitAddonRef.current);
+      }
+
+      const res = fitAddonRef.current.proposeDimensions();
       if (res?.rows && res.cols) {
-        const fontSize =  xterm.options.fontSize ?? 12;
+        const fontSize = xterm.options.fontSize ?? 12;
         const colOffset = (Math.ceil(30 / fontSize));
+        const newCols = isFullScreen ? res.cols - colOffset : res.cols + colOffset;
+        const newRows = isFullScreen ? res.rows - 1 : res.rows;
 
-        if (isFullScreen) xterm.resize(res.cols - colOffset, res.rows - 1)
-        else xterm.resize(res.cols + colOffset, res.rows)
+        console.log('Resizing terminal:', {newCols, newRows, isFullScreen});
+        xterm.resize(newCols, newRows);
       }
     }
   }
@@ -300,8 +387,6 @@ const Terminal: VFC = () => {
   };
 
   const ModifiedTextField = TextField as any;
-  if (!loaded) return <SteamSpinner />
-
   return (
     <Focusable noFocusRing={true} onGamepadDirection={gamepadHandler} style={{ margin: 0, padding: 0, paddingTop: "2.5rem", color: "white", width: '100vw' }}>
       <div style={{padding: fullScreen ? "0" : "0 1rem", }}>

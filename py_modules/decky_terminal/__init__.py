@@ -136,6 +136,7 @@ class DeckyTerminal:
         if self._terminal_sessions.get(terminal_id) is None:
             self._terminal_sessions[terminal_id] = Terminal(terminal_id, cmdline, **flags)
             self._terminal_sessions[terminal_id].title = phoneticize(terminal_id[0:4])
+            await self._terminal_sessions[terminal_id].start()
 
     async def remove_terminal(self, terminal_id: str):
         if self._terminal_sessions.get(terminal_id) is not None:

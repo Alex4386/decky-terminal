@@ -1,14 +1,11 @@
 import deckyPlugin from "@decky/rollup";
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default deckyPlugin({
   plugins: [
-    {
-      name: 'resolve-xterm',
-      resolveId(source) {
-        if (source.startsWith('@xterm/')) {
-          return null; // Let nodeResolve handle it
-        }
-      }
-    }
+    nodeResolve({
+      browser: true,
+      preferBuiltins: false
+    })
   ]
 });
