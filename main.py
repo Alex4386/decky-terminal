@@ -1,6 +1,7 @@
 from typing import List, Optional
 from decky_terminal import DeckyTerminal
 
+import decky
 
 class Plugin:
     decky_terminal = DeckyTerminal()
@@ -41,6 +42,7 @@ class Plugin:
             return False
         
     async def send_terminal_input(self, terminal_id: str, data: str) -> bool:
+        decky.logger.debug("[terminal][DEBUG] Sending input to terminal %s: %s", terminal_id, data)
         try:
             terminal = Plugin.decky_terminal.get_terminal(terminal_id)
             if terminal is not None:
@@ -51,13 +53,16 @@ class Plugin:
             return False
 
     async def send_terminal_buffer(self, terminal_id: str) -> bool:
+        decky.logger.info("[terminal][INFO][%s] Received request to send terminal buffer.", terminal_id)
         try:
             terminal = Plugin.decky_terminal.get_terminal(terminal_id)
             if terminal is not None:
                 await terminal.send_current_buffer()
                 return True
+            decky.logger.error("[terminal][ERROR][%s] Terminal not found.", terminal_id)
             return False
-        except:
+        except Exception as e:
+            decky.logger.error("[terminal][ERROR][%s] Exception during send terminal buffer: %s", terminal_id, e)
             return False
         
     async def subscribe_terminal(self, terminal_id: str) -> bool:

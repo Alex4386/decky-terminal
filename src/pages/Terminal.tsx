@@ -97,7 +97,7 @@ const Terminal: VFC = () => {
         window.location.href = '/';
         return;
       }
-      console.log('Terminal result:', terminalResult);
+      console.log('Terminal result:', { terminalResult, id });
 
       if ((terminalResult as any)?.title) {
         const title = (terminalResult as any)?.title;

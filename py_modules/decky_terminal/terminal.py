@@ -47,6 +47,7 @@ class Terminal:
         self.is_subscribed = False
 
         self.flags = kwargs
+        decky.logger.info("[terminal][INFO][%s] New terminal instance created.", self.id)
 
     def _calculate_sync_size(self):
         size = self.cols * self.rows
@@ -57,13 +58,16 @@ class Terminal:
         
     # INPUT HANDLER ========================================
     async def send_input(self, data: str):
+        decky.logger.debug("[terminal][DEBUG][%s] Input: %s", self.id, data)
         self.stdin_buffer.append(bytes(data, self.encoding))
         
     # SUBSCRIPTION =========================================
     def subscribe(self):
+        decky.logger.debug("[terminal][DEBUG][%s] Subscribed to terminal.", self.id)
         self.is_subscribed = True
 
     def unsubscribe(self):
+        decky.logger.debug("[terminal][DEBUG][%s] Unsubscribed from terminal.", self.id)
         self.is_subscribed = False
 
     # SERIALIZE ============================================
@@ -87,6 +91,7 @@ class Terminal:
 
     # CONTROL ==============================================
     async def start(self):
+        decky.logger.info("[terminal][INFO][%s] Spawning terminal.", self.id)
         await self._start_process()
 
     async def shutdown(self):
@@ -122,7 +127,7 @@ class Terminal:
                     # pop the buffers and flush into the process
                     await self._write_stdin(self.stdin_buffer.popleft())
                 except Exception as e:
-                    print(e)
+                    decky.logger.exception("[terminal][EXCEPTION][%s] Exception during process subscriber: %s", self.id, e)
             try:
                 await asyncio.sleep(0)
             except:
@@ -177,10 +182,11 @@ class Terminal:
             os.close(self.master_fd)
             os.close(self.slave_fd)
         except Exception as e:
-            print(e)
+            decky.logger.exception("[terminal][EXCEPTION][%s] Exception during kill process: %s", self.id, e)
 
     # BROADCAST =============================================
     async def broadcast_subscribers(self, data: bytes):
+        decky.logger.debug("[terminal][DEBUG][%s] Sending current buffer: %s", self.id, data)
         if self.is_subscribed:
             await decky.emit("terminal_output#"+self.id, data)
 
@@ -216,7 +222,7 @@ class Terminal:
             try:
                 await self._read_output()
             except Exception as e:
-                print(e)
+                decky.logger.exception("[terminal][EXCEPTION][%s] Exception during output read: %s", self.id, e)
                 pass
 
             await asyncio.sleep(0)
