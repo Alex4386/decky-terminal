@@ -42,7 +42,6 @@ class Plugin:
             return False
         
     async def send_terminal_input(self, terminal_id: str, data: str) -> bool:
-        decky.logger.debug("[terminal][DEBUG] Sending input to terminal %s: %s", terminal_id, data)
         try:
             terminal = Plugin.decky_terminal.get_terminal(terminal_id)
             if terminal is not None:

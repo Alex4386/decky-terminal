@@ -58,16 +58,13 @@ class Terminal:
         
     # INPUT HANDLER ========================================
     async def send_input(self, data: str):
-        decky.logger.debug("[terminal][DEBUG][%s] Input: %s", self.id, data)
         self.stdin_buffer.append(bytes(data, self.encoding))
         
     # SUBSCRIPTION =========================================
     def subscribe(self):
-        decky.logger.debug("[terminal][DEBUG][%s] Subscribed to terminal.", self.id)
         self.is_subscribed = True
 
     def unsubscribe(self):
-        decky.logger.debug("[terminal][DEBUG][%s] Unsubscribed from terminal.", self.id)
         self.is_subscribed = False
 
     # SERIALIZE ============================================
@@ -91,7 +88,7 @@ class Terminal:
 
     # CONTROL ==============================================
     async def start(self):
-        decky.logger.info("[terminal][INFO][%s] Spawning terminal.", self.id)
+        decky.logger.info("[terminal][INFO][%s] Starting shell.", self.id)
         await self._start_process()
 
     async def shutdown(self):
@@ -187,7 +184,6 @@ class Terminal:
 
     # BROADCAST =============================================
     async def broadcast_subscribers(self, data: bytes):
-        decky.logger.debug("[terminal][DEBUG][%s] Sending current buffer: %s", self.id, data)
         if self.is_subscribed:
             await decky.emit("terminal_output#"+self.id, data.decode())
 
