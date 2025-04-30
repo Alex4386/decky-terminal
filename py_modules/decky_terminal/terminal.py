@@ -188,7 +188,7 @@ class Terminal:
     async def broadcast_subscribers(self, data: bytes):
         decky.logger.debug("[terminal][DEBUG][%s] Sending current buffer: %s", self.id, data)
         if self.is_subscribed:
-            await decky.emit("terminal_output#"+self.id, data)
+            await decky.emit("terminal_output#"+self.id, data.decode())
 
     async def send_current_buffer(self):
         await self.broadcast_subscribers(bytes(self.buffer))

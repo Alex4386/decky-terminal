@@ -120,9 +120,9 @@ const Terminal: VFC = () => {
       console.log('onData handler attached');
 
       // Set up event listener for terminal output first
-      const unsubscribe = addEventListener<[ArrayBuffer]>(`terminal_output#${id}`, function terminalOutput(data) {
+      const unsubscribe = addEventListener<[string]>(`terminal_output#${id}`, function terminalOutput(data) {
         console.log('Terminal output:', data);
-        xterm.write(new Uint8Array(data));
+        xterm.write(data);
       });
 
       // Then subscribe to terminal and request initial buffer
