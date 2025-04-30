@@ -173,6 +173,7 @@ class Terminal:
         )
 
         asyncio.ensure_future(self._read_output_loop())
+        asyncio.ensure_future(self._process_subscriber())
 
     def _kill_process(self):
         if self._is_process_alive():
