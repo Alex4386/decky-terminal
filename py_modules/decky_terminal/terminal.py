@@ -203,7 +203,6 @@ class Terminal:
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
         await Common._run_async(os.write, self.master_fd, input)
-        await Common._run_async(os.fsync, self.master_fd)
 
     async def _read_output(self) -> bytes:
         output = await Common._run_async(
