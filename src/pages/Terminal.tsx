@@ -215,29 +215,69 @@ const Terminal: VFC = () => {
 
     console.log('XTermTerminal instance created');
     xtermRef.current = xterm;
+
+    return () => {
+      // Dispose xterm instance when component is unmounted
+      if (xtermRef.current) {
+        xtermRef.current.dispose();
+        xtermRef.current = null;
+      }
+    }
   }, []);
+
 
   // Track initialization state
   const initializedRef = useRef(false);
+  const initializedIdRef = useRef("");
 
+  // For handling 
   useEffect(() => {
     const connectTerminal = async () => {
       console.log('Checking initialization state:', initializedRef.current);
       if (initializedRef.current) {
-        console.log('Terminal already initialized');
-        return;
+        if (id === initializedIdRef.current) {
+          console.log('Terminal already initialized');
+          return;
+        }
+
+        console.log('Terminal already initialized with different ID, reinitializing...');
       }
       
       console.log('Checking refs:', { xtermRef: !!xtermRef.current, xtermDiv: !!xtermDiv.current });
       if (xtermRef.current && xtermDiv.current) {
         console.log('Both refs ready, initializing terminal...');
         initializedRef.current = true;
+        initializedIdRef.current = id;
         await initializeTerminal();
         await wrappedConnectIO();
       }
     };
     connectTerminal();
-  }, [xtermRef.current, xtermDiv.current]);
+
+    // Clean up function for handling unmount
+    return () => {
+      // Clean up event listener
+      if (eventListenerRef.current) {
+        removeEventListener(`terminal_output#${id}`, eventListenerRef.current as any);
+        eventListenerRef.current = null;
+      }
+
+      try {
+        // Unsubscribe from terminal
+        call<[terminal_id: string], void>("unsubscribe_terminal", id);
+      } catch(e) {
+        console.error('unregister error', e)
+      }
+
+      if (xtermRef.current) {
+        // first clear the xterm
+        xtermRef.current.clear();
+      }
+
+      setFullScreen(false)
+    };
+  }, [id, xtermRef.current, xtermDiv.current]);
+
 
   const setWindowSize = async (rows: number, cols: number) => {
     await call<[terminal_id: string, rows: number, cols: number], number>(
@@ -267,32 +307,6 @@ const Terminal: VFC = () => {
       xtermRef.current?.focus()
     }, 100)
   }
-
-  useEffect(() => {
-    // Clean up function only
-    return () => {
-      // Clean up event listener
-      if (eventListenerRef.current) {
-        removeEventListener(`terminal_output#${id}`, eventListenerRef.current as any);
-        eventListenerRef.current = null;
-      }
-
-      try {
-        // Unsubscribe from terminal
-        call<[terminal_id: string], void>("unsubscribe_terminal", id);
-      } catch(e) {
-        console.error('unregister error', e)
-      }
-
-      // Dispose xterm instance when component is unmounted
-      if (xtermRef.current) {
-        xtermRef.current.dispose();
-        xtermRef.current = null;
-      }
-
-      setFullScreen(false)
-    };
-  }, [id]);
 
   // Track FitAddon instance globally so we don't create multiple instances
   const fitAddonRef = useRef<FitAddon | null>(null);
