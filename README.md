@@ -1,6 +1,6 @@
 ![Banner](https://github.com/user-attachments/assets/bfe5fa56-0f64-4f16-beb8-e6a46b9c18bd)
 
-<p align="center"><b>DeckyTerminal</b>: A Missing Terminal emulator plugin for "game mode" for Steam Deck or other Linux handhelds</p>
+<p align="center"><b>DeckyTerminal</b>: The decky plugin that adds terminal emulator plugin for "game mode" for Steam Deck or other Linux handhelds</p>
 
 <!--
 <p align="center"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fplugins.deckbrew.xyz%2Fplugins&query=%24%5B%3F(%40.name%20%3D%3D%20'Decky%20Terminal')%5D.downloads&suffix=%20installs&label=decky&color=3ea6a3" /></p>

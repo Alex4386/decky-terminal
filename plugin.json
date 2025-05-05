@@ -5,7 +5,7 @@
   "api_version": 1,
   "publish": {
     "tags": ["terminal"],
-    "description": "Your terminal is going places. The missing terminal emulator for \"game-mode\".",
-    "image": "https://github.com/Alex4386/decky-terminal/assets/27724108/35fa0f98-1d74-4689-be35-233ef4ed6cd2"
+    "description": "Your terminal is going places. The decky plugin that adds terminal emulator plugin for \"game mode\"",
+    "image": "https://github.com/user-attachments/assets/c8c8b38c-9fb1-4185-83bc-b6ed7cf95dc6"
   }
 }
