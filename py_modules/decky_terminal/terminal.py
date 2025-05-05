@@ -47,6 +47,7 @@ class Terminal:
         self.is_subscribed = False
 
         self.flags = kwargs
+        decky.logger.info("[terminal][INFO][%s] New terminal instance created.", self.id)
 
     def _calculate_sync_size(self):
         size = self.cols * self.rows
@@ -87,6 +88,7 @@ class Terminal:
 
     # CONTROL ==============================================
     async def start(self):
+        decky.logger.info("[terminal][INFO][%s] Starting shell.", self.id)
         await self._start_process()
 
     async def shutdown(self):
@@ -122,7 +124,7 @@ class Terminal:
                     # pop the buffers and flush into the process
                     await self._write_stdin(self.stdin_buffer.popleft())
                 except Exception as e:
-                    print(e)
+                    decky.logger.exception("[terminal][EXCEPTION][%s] Exception during process subscriber: %s", self.id, e)
             try:
                 await asyncio.sleep(0)
             except:
@@ -168,6 +170,7 @@ class Terminal:
         )
 
         asyncio.ensure_future(self._read_output_loop())
+        asyncio.ensure_future(self._process_subscriber())
 
     def _kill_process(self):
         if self._is_process_alive():
@@ -177,12 +180,12 @@ class Terminal:
             os.close(self.master_fd)
             os.close(self.slave_fd)
         except Exception as e:
-            print(e)
+            decky.logger.exception("[terminal][EXCEPTION][%s] Exception during kill process: %s", self.id, e)
 
     # BROADCAST =============================================
     async def broadcast_subscribers(self, data: bytes):
         if self.is_subscribed:
-            await decky.emit("terminal_output#"+self.id, data)
+            await decky.emit("terminal_output#"+self.id, data.decode())
 
     async def send_current_buffer(self):
         await self.broadcast_subscribers(bytes(self.buffer))
@@ -200,7 +203,6 @@ class Terminal:
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
         await Common._run_async(os.write, self.master_fd, input)
-        await Common._run_async(os.fsync, self.master_fd)
 
     async def _read_output(self) -> bytes:
         output = await Common._run_async(
@@ -216,7 +218,7 @@ class Terminal:
             try:
                 await self._read_output()
             except Exception as e:
-                print(e)
+                decky.logger.exception("[terminal][EXCEPTION][%s] Exception during output read: %s", self.id, e)
                 pass
 
             await asyncio.sleep(0)
