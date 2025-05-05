@@ -34,7 +34,7 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       '@decky/ui':
-        specifier: ^4.8.3
+        specifier: ^4.10.0
         version: 4.10.0
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.0
