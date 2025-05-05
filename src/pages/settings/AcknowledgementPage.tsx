@@ -21,6 +21,7 @@ import {
             <ul>
                 <li><b>Alex4386</b>: Main Developer</li>
                 <li><b>Gadgetoid</b>: Refactored Python backend</li>
+                <li><b>jadaml</b>: Helped and Troubleshooted Decky V3 Migration</li>
             </ul>
         </Focusable>
     );
