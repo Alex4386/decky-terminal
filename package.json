@@ -1,6 +1,6 @@
 {
   "name": "decky-terminal",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "type": "module",
   "description": "A long-awaited terminal plugin that turns your steamdeck into Linux battlestation.",
   "scripts": {
