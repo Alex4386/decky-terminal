@@ -136,7 +136,8 @@ class Terminal:
 
         # Disable Steam internal library paths since it interferes with applications.
         # TODO: Add option to enable Steam-internal libraries
-        del result["LD_LIBRARY_PATH"]
+        if "LD_LIBRARY_PATH" in result:
+            del result["LD_LIBRARY_PATH"]
 
         result.update({
             "TERM": "xterm-256color",
