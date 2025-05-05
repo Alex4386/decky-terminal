@@ -1,4 +1,4 @@
-import { DialogButton } from "decky-frontend-lib";
+import { DialogButton } from "@decky/ui";
 
 export function IconDialogButton(props: Parameters<typeof DialogButton>[0]): ReturnType<typeof DialogButton> {
   return <DialogButton

@@ -1,21 +1,13 @@
 import {
-  ButtonItem,
-  definePlugin,
   DialogButton,
-  Menu,
-  MenuItem,
   Field,
   Focusable,
   PanelSection,
-  PanelSectionRow,
   Router,
-  ServerAPI,
-  showContextMenu,
-  staticClasses,
-} from "decky-frontend-lib";
+} from "@decky/ui";
 import { useState, VFC } from "react";
 import { FaCog, FaPlus, FaTimesCircle } from "react-icons/fa";
-import TerminalGlobal from "./common/global";
+import { call } from "@decky/api";
 import { IconDialogButton } from "./common/components";
 
 // interface AddMethodArgs {
@@ -51,46 +43,22 @@ const SidePanel: VFC = ({}) => {
   const [result, setResult] = useState<TerminalResult[]>([]);
 
   const getTerminals = async () => {
-    const serverAPI = TerminalGlobal.getServer();
-
-    const result = await serverAPI.callPluginMethod<{}, TerminalResult[]>(
-      "get_terminals",
-      {}
-    );
-
-    if (result.success) {
-      setResult(result.result)
-    } 
+    const result = await call<[], TerminalResult[]>("get_terminals");
+    setResult(result);
   }
 
   const createTerminal = async () => {
-    const serverAPI = TerminalGlobal.getServer();
-
-    const result = await serverAPI.callPluginMethod<{}, boolean>(
-      "create_terminal",
-      {}
-    );
-
-    if (result.success) {
-      if (result.result) {
-        await getTerminals()
-      }
-    } 
+    const result = await call<[], boolean>("create_terminal");
+    if (result) {
+      await getTerminals();
+    }
   }
 
   const removeTerminal = async (terminal_id: string) => {
-    const serverAPI = TerminalGlobal.getServer();
-
-    const result = await serverAPI.callPluginMethod<{}, boolean>(
-      "remove_terminal",
-      { terminal_id }
-    );
-
-    if (result.success) {
-      if (result.result) {
-        await getTerminals()
-      }
-    } 
+    const result = await call<[terminal_id: string], boolean>("remove_terminal", terminal_id);
+    if (result) {
+      await getTerminals();
+    }
   }
 
   useState(() => {

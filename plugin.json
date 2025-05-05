@@ -2,6 +2,7 @@
   "name": "Decky Terminal",
   "author": "Alex4386",
   "flags": [],
+  "api_version": 1,
   "publish": {
     "tags": ["terminal"],
     "description": "Your terminal is going places. The missing terminal emulator for \"game-mode\".",

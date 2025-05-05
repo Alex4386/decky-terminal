@@ -1,6 +1,6 @@
 import {
     Focusable,
-  } from "decky-frontend-lib";
+  } from "@decky/ui";
   import { VFC } from "react";
   
   
@@ -19,8 +19,9 @@ import {
             <p>&nbsp;</p>
             <p>DeckyTerminal is possible thanks to following contributors:</p>
             <ul>
-                <li><b>Alex4386</b>: Main Developer</li>
+                <li><b>Alex4386</b>: Maintainer</li>
                 <li><b>Gadgetoid</b>: Refactored Python backend</li>
+                <li><b>jadaml</b>: Helped and Troubleshooted Decky V3 Migration</li>
             </ul>
         </Focusable>
     );

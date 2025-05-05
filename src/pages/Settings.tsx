@@ -1,8 +1,6 @@
 import {
-  DialogButton,
-  Router,
   SidebarNavigation,
-} from "decky-frontend-lib";
+} from "@decky/ui";
 import { VFC } from "react";
 import AcknowledgementPage from "./settings/AcknowledgementPage";
 import SettingsPage from "./settings/SettingsPage";

@@ -1,15 +1,13 @@
 from typing import List, Optional
 from decky_terminal import DeckyTerminal
 
+import decky
 
 class Plugin:
     decky_terminal = DeckyTerminal()
 
-    async def is_server_running(self) -> bool:
+    async def is_running(self) -> bool:
         return Plugin.decky_terminal.is_running()
-
-    async def get_server_port(self) -> int:
-        return Plugin.decky_terminal.get_server_port()
 
     async def get_terminals(self) -> List[dict]:
         terminals = Plugin.decky_terminal.get_terminals()
@@ -42,6 +40,43 @@ class Plugin:
             return True
         except:
             return False
+        
+    async def send_terminal_input(self, terminal_id: str, data: str) -> bool:
+        try:
+            terminal = Plugin.decky_terminal.get_terminal(terminal_id)
+            if terminal is not None:
+                await terminal.send_input(data)
+                return True
+            return False
+        except:
+            return False
+
+    async def send_terminal_buffer(self, terminal_id: str) -> bool:
+        decky.logger.info("[terminal][INFO][%s] Received request to send terminal buffer.", terminal_id)
+        try:
+            terminal = Plugin.decky_terminal.get_terminal(terminal_id)
+            if terminal is not None:
+                await terminal.send_current_buffer()
+                return True
+            decky.logger.error("[terminal][ERROR][%s] Terminal not found.", terminal_id)
+            return False
+        except Exception as e:
+            decky.logger.error("[terminal][ERROR][%s] Exception during send terminal buffer: %s", terminal_id, e)
+            return False
+        
+    async def subscribe_terminal(self, terminal_id: str) -> bool:
+        try:
+            await Plugin.decky_terminal.subscribe(terminal_id)
+            return True
+        except:
+            return False
+    
+    async def unsubscribe_terminal(self, terminal_id: str) -> bool:
+        try:
+            await Plugin.decky_terminal.unsubscribe(terminal_id)
+            return True
+        except:
+            return False
 
     async def change_terminal_window_size(self, terminal_id, rows: int, cols: int) -> bool:
         try:
@@ -69,10 +104,10 @@ class Plugin:
         return await Plugin.decky_terminal.set_default_shell(shell)
 
     async def _main(self):
-        await Plugin.decky_terminal.start_server()
+        pass
 
     async def _unload(self):
-        await Plugin.decky_terminal.stop_server()
+        pass
 
     async def _migration(self):
         pass

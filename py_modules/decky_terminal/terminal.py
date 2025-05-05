@@ -6,15 +6,17 @@ import pty
 import signal
 import struct
 import termios
+import decky
+import uuid
 from typing import List
-
-from websockets import WebSocketServerProtocol
 
 from .common import Common
 
 
 class Terminal:
+    id: str = str(uuid.uuid4())
     _sync_size: int = 1000
+    encoding = "utf-8"
 
     is_shell: bool = True
     cmdline: str = None
@@ -23,25 +25,29 @@ class Terminal:
     master_fd: int
     slave_fd: int
 
-    subscribers: List[WebSocketServerProtocol]
     buffer: collections.deque = None
+    stdin_buffer: collections.deque = None
 
     cols: int = 80
     rows: int = 24
 
     flags: dict = dict()
+    is_subscribed: bool = False
 
     title: str = ""
     _title_cache: bytes = b""
 
-    def __init__(self, cmdline: str, is_shell: bool = True, **kwargs):
+    def __init__(self, id: str, cmdline: str, is_shell: bool = True, **kwargs):
+        self.id = id
         self.cmdline = cmdline  # TODO: maybe raise ValueError? cmdline can't meaningfully be None or undefined since it must be available for _start_process
 
         self.is_shell = is_shell
         self.buffer = collections.deque([], maxlen=4096)
-        self.subscribers = []
+        self.stdin_buffer = collections.deque([], maxlen=4096)
+        self.is_subscribed = False
 
         self.flags = kwargs
+        decky.logger.info("[terminal][INFO][%s] New terminal instance created.", self.id)
 
     def _calculate_sync_size(self):
         size = self.cols * self.rows
@@ -49,6 +55,17 @@ class Terminal:
             return 1000
         else:
             return size * 5
+        
+    # INPUT HANDLER ========================================
+    async def send_input(self, data: str):
+        self.stdin_buffer.append(bytes(data, self.encoding))
+        
+    # SUBSCRIPTION =========================================
+    def subscribe(self):
+        self.is_subscribed = True
+
+    def unsubscribe(self):
+        self.is_subscribed = False
 
     # SERIALIZE ============================================
     def serialize(self) -> dict:
@@ -71,18 +88,17 @@ class Terminal:
 
     # CONTROL ==============================================
     async def start(self):
+        decky.logger.info("[terminal][INFO][%s] Starting shell.", self.id)
         await self._start_process()
 
     async def shutdown(self):
         self._kill_process()
-        await self.close_subscribers()
-        self.subscribers = []
 
     async def change_window_size(self, rows: int, cols: int):
         if self._is_process_alive():
             await self._change_pty_size(rows, cols)
             await self.process.send_signal(signal.SIGWINCH)
-            await self._write_stdin(f"\x1b[8;{rows};{cols}t".encode("utf-8"))
+            await self._write_stdin(f"\x1b[8;{rows};{cols}t".encode(self.encoding))
 
     async def _change_pty_size(self, rows: int, cols: int):
         self.rows = rows
@@ -101,22 +117,18 @@ class Terminal:
             )
 
     # WORKERS ==============================================
-    async def _process_subscriber(self, ws: WebSocketServerProtocol):
-        await ws.send(bytes(self.buffer))
-        if not self._is_process_started():
-            await self.start()
-
-        while not ws.closed:
+    async def _process_subscriber(self):
+        while self._is_process_alive():
+            while len(self.stdin_buffer) > 0:
+                try:
+                    # pop the buffers and flush into the process
+                    await self._write_stdin(self.stdin_buffer.popleft())
+                except Exception as e:
+                    decky.logger.exception("[terminal][EXCEPTION][%s] Exception during process subscriber: %s", self.id, e)
             try:
-                data = await ws.recv()
-                if isinstance(data, str):
-                    data = data.encode("utf-8")
-
-                await self._write_stdin(data)
-            except Exception as e:
-                print("Exception", e)
-
-            await asyncio.sleep(0)
+                await asyncio.sleep(0)
+            except:
+                pass
 
     # PROCESS CONTROL =======================================
     def get_terminal_env(self):
@@ -124,7 +136,8 @@ class Terminal:
 
         # Disable Steam internal library paths since it interferes with applications.
         # TODO: Add option to enable Steam-internal libraries
-        del result["LD_LIBRARY_PATH"]
+        if "LD_LIBRARY_PATH" in result:
+            del result["LD_LIBRARY_PATH"]
 
         result.update({
             "TERM": "xterm-256color",
@@ -158,6 +171,7 @@ class Terminal:
         )
 
         asyncio.ensure_future(self._read_output_loop())
+        asyncio.ensure_future(self._process_subscriber())
 
     def _kill_process(self):
         if self._is_process_alive():
@@ -167,44 +181,15 @@ class Terminal:
             os.close(self.master_fd)
             os.close(self.slave_fd)
         except Exception as e:
-            print(e)
-
-    # WEBSOCKET =============================================
-    def add_subscriber(self, ws: WebSocketServerProtocol):
-        if not self.is_subscriber(ws):
-            self.subscribers.append(ws)
-            asyncio.ensure_future(self._process_subscriber(ws))
-
-    def is_subscriber(self, ws: WebSocketServerProtocol):
-        try:
-            self.subscribers.index(ws)
-            return True
-        except ValueError:
-            return False
-
-    # WEBSOCKET - INTERNAL ==================================
-    async def _remove_subscriber(self, ws: WebSocketServerProtocol):
-        # Internal only!
-        if self.is_subscriber(ws):
-            self.subscribers.remove(ws)
-            if not ws.closed:
-                await ws.close()
+            decky.logger.exception("[terminal][EXCEPTION][%s] Exception during kill process: %s", self.id, e)
 
     # BROADCAST =============================================
     async def broadcast_subscribers(self, data: bytes):
-        closed = []
-        for ws in self.subscribers:
-            if ws.closed:
-                closed.append(ws)
-                continue
-            await ws.send(data)
+        if self.is_subscribed:
+            await decky.emit("terminal_output#"+self.id, data.decode())
 
-        for ws in closed:
-            await self._remove_subscriber(ws)
-
-    async def close_subscribers(self):
-        for ws in self.subscribers:
-            await self._remove_subscriber(ws)
+    async def send_current_buffer(self):
+        await self.broadcast_subscribers(bytes(self.buffer))
 
     # IS ALIVE ==============================================
     def _is_process_started(self):
@@ -219,7 +204,6 @@ class Terminal:
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
         await Common._run_async(os.write, self.master_fd, input)
-        await Common._run_async(os.fsync, self.master_fd)
 
     async def _read_output(self) -> bytes:
         output = await Common._run_async(
@@ -235,7 +219,7 @@ class Terminal:
             try:
                 await self._read_output()
             except Exception as e:
-                print(e)
+                decky.logger.exception("[terminal][EXCEPTION][%s] Exception during output read: %s", self.id, e)
                 pass
 
             await asyncio.sleep(0)

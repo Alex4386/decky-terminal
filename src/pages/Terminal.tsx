@@ -6,35 +6,34 @@ import {
   TextField,
   Focusable,
   GamepadButton,
-  Field,
   staticClasses,
-} from "decky-frontend-lib";
+} from "@decky/ui";
+import { call, addEventListener, removeEventListener } from "@decky/api";
 import { VFC, useRef, useState, useEffect } from "react";
-import { Terminal as XTermTerminal } from 'xterm';
-import { AttachAddon } from 'xterm-addon-attach';
-import { FitAddon } from 'xterm-addon-fit';
-import TerminalGlobal from "../common/global";
+import { Terminal as XTermTerminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
 import XTermCSS from "../common/xterm_css";
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaChevronCircleLeft, FaExpand, FaKeyboard, FaTerminal } from "react-icons/fa";
 import { IconDialogButton } from "../common/components";
 
 const Terminal: VFC = () => {
-
-  // I can't find RouteComponentParams :skull:
   const { id } = useParams() as any;
   const [loaded, setLoaded] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [title, setTitle] = useState<string | null>(null);
   const [config, setConfig] = useState<Record<string, any> | null>(null);
   const [openFunctionRow, setOpenFunctionRow] = useState<boolean>(false);
-  let prevId: string|undefined = undefined;
 
   // Create a ref to hold the xterm instance
   const xtermRef = useRef<XTermTerminal | null>(null);
   const xtermDiv = useRef<HTMLDivElement | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-
   const fakeInputRef = useRef<typeof TextField | null>(null);
+  const eventListenerRef = useRef<Function | null>(null);
+
+  const sendInput = async (input: string) => {
+    await call<[terminal_id: string, input: string], void>("send_terminal_input", id, input);
+    console.log('sending Input:', input);
+  };
 
   const wrappedConnectIO = async () => {
     try {
@@ -45,128 +44,248 @@ const Terminal: VFC = () => {
   }
 
   const getConfig = async (): Promise<Record<string, any>|undefined> => {
-    const serverAPI = TerminalGlobal.getServer()
-    const config = await serverAPI.callPluginMethod<{}, string[]>("get_config", {});
-
-    if (config.success) {
-        setConfig(config.result)
-
-        return config.result;
-    }
-
-    return;
+    const config = await call<[], string[]>("get_config");
+    setConfig(config);
+    return config;
   }
 
-  const updateTitle = async (title: string): Promise<Record<string, any>|undefined> => {
-    const serverAPI = TerminalGlobal.getServer()
-    await serverAPI.callPluginMethod<{ terminal_id: string, title: string }, string[]>("set_terminal_title", { terminal_id: id, title });
-
-    return;
+  const updateTitle = async (title: string): Promise<void> => {
+    await call<[terminal_id: string, title: string], string[]>("set_terminal_title", id, title);
   }
 
   const connectIO = async () => {
-    prevId = id;
-    setTitle(id);
+    try {
+      console.log('connectIO started');
+      const xterm = xtermRef.current as XTermTerminal;
+      if (!xterm) {
+        throw new Error('xterm not initialized');
+      }
 
-    const xterm = xtermRef.current
+      console.log('Getting config...');
+      const localConfig = await getConfig()
+      console.log('Config received:', localConfig);
 
-    const serverAPI = TerminalGlobal.getServer()
-    const localConfig = await getConfig()
-
-    if (localConfig && xterm) {
-      if (localConfig.__version__ === 1) {
-        if (localConfig.font_family?.trim()) {
-          xterm.options.fontFamily = localConfig.font_family;
+      // First open xterm if not already open
+      if (!xterm.element) {
+        if (!xtermDiv.current) {
+          throw new Error('xtermDiv not available');
         }
+        console.log('Opening xterm first...');
+        await xterm.open(xtermDiv.current);
+        xterm.write('--- xterm test message ---\r\n');
+      }
 
-        if (localConfig.font_size) {
-          const fs = parseInt(localConfig.font_size);
-          if (!isNaN(fs) && fs > 0) {
-            xterm.options.fontSize = fs;
+      if (localConfig && xterm) {
+        if (localConfig.__version__ === 1) {
+          if (localConfig.font_family?.trim()) {
+            xterm.options.fontFamily = localConfig.font_family;
+          }
+
+          if (localConfig.font_size) {
+            const fs = parseInt(localConfig.font_size);
+            if (!isNaN(fs) && fs > 0) {
+              xterm.options.fontSize = fs;
+            }
           }
         }
-      }
-    }
 
-    const terminalResult = await serverAPI.callPluginMethod<{
-      terminal_id: string
-    }, number>("get_terminal", { terminal_id: id });
-    if (terminalResult.success) {
-      if (terminalResult.result === null) {
-        xterm?.write("--- Terminal Not Found ---");
-        history.back();
+        // The loading of the config will resize the terminal
+        // so we need to call fitToScreen again
+        fitToScreen();
       }
-      if ((terminalResult.result as any)?.title) {
-        const title = (terminalResult.result as any)?.title;
+
+      console.log('Getting terminal...');
+      const terminalResult = await call<[terminal_id: string], number>("get_terminal", id);
+      if (terminalResult === null) {
+        xterm?.write("--- Terminal Not Found ---");
+        window.location.href = '/';
+        return;
+      }
+      console.log('Terminal result:', { terminalResult, id });
+
+      if ((terminalResult as any)?.title) {
+        const title = (terminalResult as any)?.title;
         setTitle(title)
       }
+
+      console.log('Setting up xterm event handlers...');
+      xterm.onTitleChange((title: string) => {
+        console.log('Title changed:', title);
+        setTitle(title)
+        updateTitle(title)
+      });
+
+      // Debug: Log when event handler is attached
+      console.log('Attaching onData handler...');
+      xterm.onData((data: string) => {
+        console.log('xterm onData triggered:', data);
+        sendInput(data);
+      });
+      console.log('onData handler attached');
+
+      // Set up event listener for terminal output first
+      const unsubscribe = addEventListener<[string]>(`terminal_output#${id}`, function terminalOutput(data) {
+        console.log('Terminal output:', data);
+        xterm.write(data);
+      });
+
+      // Then subscribe to terminal and request initial buffer
+      console.log('Subscribing to terminal...');
+      const res = await call<[terminal_id: string], void>("subscribe_terminal", id);
+      console.log('Terminal subscription:', res);
+
+      // Request initial buffer
+      await call<[terminal_id: string], void>("send_terminal_buffer", id);
+
+      eventListenerRef.current = unsubscribe;
+      console.log('Terminal setup complete');
+
+    } catch (error) {
+      console.error('connectIO error:', error);
+      throw error; // Re-throw to be caught by wrappedConnectIO
     }
 
-    const result = await serverAPI.callPluginMethod<{}, number>("get_server_port", {});
-    if (result.success) {
-      const url = new URL('ws://127.0.0.1:'+result.result+'/v1/terminals/'+id);
-      const ws = new WebSocket(url);
+    // Set the loaded state to true after xterm is initialized
+    setLoaded(true);
+  };
 
-      if (wsRef.current !== null) {
-        try {
-          wsRef.current.close()
-        } catch(e) {}
-      }
+  // Initialize xterm and set up size handling
+  const initializeTerminal = async () => {
+    console.log('Initializing terminal...');
+    const xterm = xtermRef.current as XTermTerminal;
+    if (!xterm) {
+      console.error('No xterm instance available');
+      return;
+    }
 
-      wsRef.current = ws;
-      ws.onclose = () => {
-        xterm?.write("\r\n--- Terminal Disconnected ---")
-      }
-
-      if (xterm) {
-        xterm.onTitleChange((title) => {
-          setTitle(title)
-          updateTitle(title)
+    const div = xtermDiv.current;
+    if (!div) {
+      console.error('No terminal div available');
+      return;
+    }
+    
+    // 1. Set up FitAddon first so it's ready when terminal opens
+    console.log('Setting up FitAddon...');
+    const fitAddon = new FitAddon();
+    xterm.loadAddon(fitAddon);
+    
+    // 2. Open terminal and verify it's ready
+    console.log('Opening xterm...');
+    await xterm.open(div);
+    console.log('xterm opened, element:', xterm.element);
+    
+    // 3. Configure initial size and focus
+    console.log('Configuring terminal size...');
+    fitToScreen(); // This uses FitAddon to calculate proper dimensions
+    
+    // 4. Set up resize handler BEFORE setting window size to avoid race condition
+    xterm.onResize((e) => {
+      console.log('Terminal resized:', e.rows, e.cols);
+      setWindowSize(e.rows, e.cols);
+    });
+    
+    // 5. Set initial window size
+    await setWindowSize(xterm.rows, xterm.cols);
+    
+    // 6. Focus terminal after everything is set up
+    xterm.focus();
+    console.log('Terminal initialization complete');
+    
+    if (fakeInputRef.current) {
+      const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
+      if (inputBox.tabIndex !== -1) {
+        inputBox.tabIndex = -1;
+        inputBox.addEventListener("click", () => {
+          setFocusToTerminal();
         })
-      }
-      
-      const attachAddon = new AttachAddon(ws);
-      xterm?.loadAddon(attachAddon);
-
-      // Set the loaded state to true after xterm is initialized
-      setLoaded(true);
-
-      await xterm?.open(xtermDiv.current as HTMLDivElement);
-      // wait for it!
-      await (new Promise<void>((res) => setTimeout(res, 1)));
-      fitToScreen()
-
-      if (xterm) {
-        xterm.onResize((e) => {
-          setWindowSize(e.rows, e.cols);
-        });
-
-        await setWindowSize(xterm.rows, xterm.cols);
-      }
-      
-      if (fakeInputRef.current) {
-        const inputBox = (fakeInputRef.current as any).m_elInput as HTMLInputElement;
-        if (inputBox.tabIndex !== -1) {
-          inputBox.tabIndex = -1;
-          inputBox.addEventListener("click", (e) => {
-            setFocusToTerminal();
-          })
-        }
       }
     }
   };
 
-  const setWindowSize = async (rows: number, cols: number) => {
-    const serverAPI = TerminalGlobal.getServer()
-    const result = await serverAPI.callPluginMethod<{
-      terminal_id: string,
-      rows: number,
-      cols: number,
-    }, number>("change_terminal_window_size", {
-      terminal_id: id,
-      rows,
-      cols,
+  // First effect creates xterm instance
+  useEffect(() => {
+    console.log('Creating xterm instance');
+    const xterm = new XTermTerminal({
+      //scrollback: 0,
+      allowProposedApi: true,
+      cursorBlink: true,
+
+      rows: 10,
     });
+
+    console.log('XTermTerminal instance created');
+    xtermRef.current = xterm;
+
+    return () => {
+      // Dispose xterm instance when component is unmounted
+      if (xtermRef.current) {
+        xtermRef.current.dispose();
+        xtermRef.current = null;
+      }
+    }
+  }, []);
+
+
+  // Track initialization state
+  const initializedRef = useRef(false);
+  const initializedIdRef = useRef("");
+
+  // For handling 
+  useEffect(() => {
+    const connectTerminal = async () => {
+      console.log('Checking initialization state:', initializedRef.current);
+      if (initializedRef.current) {
+        if (id === initializedIdRef.current) {
+          console.log('Terminal already initialized');
+          return;
+        }
+
+        console.log('Terminal already initialized with different ID, reinitializing...');
+      }
+      
+      console.log('Checking refs:', { xtermRef: !!xtermRef.current, xtermDiv: !!xtermDiv.current });
+      if (xtermRef.current && xtermDiv.current) {
+        console.log('Both refs ready, initializing terminal...');
+        initializedRef.current = true;
+        initializedIdRef.current = id;
+        await initializeTerminal();
+        await wrappedConnectIO();
+      }
+    };
+    connectTerminal();
+
+    // Clean up function for handling unmount
+    return () => {
+      // Clean up event listener
+      if (eventListenerRef.current) {
+        removeEventListener(`terminal_output#${id}`, eventListenerRef.current as any);
+        eventListenerRef.current = null;
+      }
+
+      try {
+        // Unsubscribe from terminal
+        call<[terminal_id: string], void>("unsubscribe_terminal", id);
+      } catch(e) {
+        console.error('unregister error', e)
+      }
+
+      if (xtermRef.current) {
+        // first clear the xterm
+        xtermRef.current.clear();
+      }
+
+      setFullScreen(false)
+    };
+  }, [id, xtermRef.current, xtermDiv.current]);
+
+
+  const setWindowSize = async (rows: number, cols: number) => {
+    await call<[terminal_id: string, rows: number, cols: number], number>(
+      "change_terminal_window_size",
+      id,
+      rows,
+      cols
+    );
   }
 
   const openKeyboard = () => {
@@ -189,52 +308,41 @@ const Terminal: VFC = () => {
     }, 100)
   }
 
-  useEffect(() => {
-    // Initialize xterm instance and attach it to a DOM element
-    const xterm = new XTermTerminal({
-      //scrollback: 0,
-    });
-    xtermRef.current = xterm;
-    wrappedConnectIO()
-
-    // Clean up function
-    return () => {
-      // Dispose xterm instance when component is unmounted
-      if (xtermRef.current) {
-        xtermRef.current.dispose();
-        xtermRef.current = null;
-      }
-
-      if (wsRef.current) {
-        wsRef.current.close()
-        wsRef.current = null;
-      }
-
-      setFullScreen(false)
-    };
-  }, [ id ]);
+  // Track FitAddon instance globally so we don't create multiple instances
+  const fitAddonRef = useRef<FitAddon | null>(null);
 
   const fitToScreen = (_fullScreen?: boolean) => {
-    const isFullScreen = _fullScreen === undefined ? fullScreen : _fullScreen
+    const isFullScreen = _fullScreen === undefined ? fullScreen : _fullScreen;
     
     if (xtermRef.current) {
-      const xterm = xtermRef.current
+      const xterm = xtermRef.current;
 
-      const fitAddon = new FitAddon()
-      xtermRef.current.loadAddon(fitAddon)
-      const res = fitAddon.proposeDimensions();
+      // Use existing FitAddon or create new one
+      if (!fitAddonRef.current) {
+        console.log('Creating new FitAddon');
+        fitAddonRef.current = new FitAddon();
+        xterm.loadAddon(fitAddonRef.current);
+      }
+
+      const res = fitAddonRef.current.proposeDimensions();
       if (res?.rows && res.cols) {
-        const colOffset = (Math.ceil(30 / xterm.options.fontSize));
+        const fontSize = xterm.options.fontSize ?? 12;
+        const colOffset = (Math.ceil(30 / fontSize));
+        const newCols = isFullScreen ? res.cols - colOffset : res.cols + colOffset;
+        let newRows = isFullScreen ? res.rows - 1 : res.rows;
 
-        if (isFullScreen) xterm.resize(res.cols - colOffset, res.rows - 1)
-        else xterm.resize(res.cols + colOffset, res.rows)
+        if (config?.extra_keys) {
+          newRows -= 3;
+        }
+        
+        console.log('Resizing terminal:', {newCols, newRows, isFullScreen});
+        xterm.resize(newCols, newRows);
       }
     }
   }
 
   const startFullScreen = () => {
     setFullScreen(true);
-    //handleResize()
     setTimeout(() => {
       try {
         fitToScreen(true)
@@ -264,8 +372,8 @@ const Terminal: VFC = () => {
           break;
       }
 
-      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED && command) {
-        wsRef.current.send(command)
+      if (command) {
+        sendInput(command);
 
         // refocus xterm
         if (config?.use_dpad && !fullScreen) {
@@ -308,8 +416,6 @@ const Terminal: VFC = () => {
   };
 
   const ModifiedTextField = TextField as any;
-  if (!loaded) return <SteamSpinner />
-
   return (
     <Focusable noFocusRing={true} onGamepadDirection={gamepadHandler} style={{ margin: 0, padding: 0, paddingTop: "2.5rem", color: "white", width: '100vw' }}>
       <div style={{padding: fullScreen ? "0" : "0 1rem", }}>
@@ -333,7 +439,7 @@ const Terminal: VFC = () => {
           <DialogButton style={{ visibility: 'hidden', zIndex: -10, position: 'absolute' }} onClick={setFocusToTerminal}></DialogButton> :
             <ModifiedTextField ref={fakeInputRef} disabled={config?.disable_virtual_keyboard ?? false} style={{ display: 'none' }} onClick={setFocusToTerminal} />
         }
-        <Focusable onClick={openKeyboard} style={{boxSizing: 'content-box'}}>
+        <Focusable onClick={openKeyboard} style={{boxSizing: 'content-box', overflow: 'hidden'}}>
           <div ref={xtermDiv} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: "calc(100vh - "+getPadding()+")" }}></div>
         </Focusable>
 
@@ -341,25 +447,25 @@ const Terminal: VFC = () => {
           (config?.extra_keys && (!fullScreen || config?.handheld_mode)) && 
             <Focusable style={{ overflowX: 'scroll', display: 'flex', gap: '1rem', padding: '.5rem', width: 'fit-content', maxWidth: 'calc(100% - 2rem)', margin: '0 auto' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem' }}>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b')}>Esc</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('')}>Esc</IconDialogButton>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
                 {
                   openFunctionRow &&
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '.25rem'}}>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1P')}>F1</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1Q')}>F2</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1R')}>F3</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[1S')}>F4</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[15~')}>F5</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[17~')}>F6</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[18~')}>F7</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[19~')}>F8</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[20~')}>F9</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[21~')}>F10</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[23~')}>F11</IconDialogButton>
-                      <IconDialogButton onClick={() => wsRef.current?.send('\x1b[24~')}>F12</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[1P')}>F1</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[1Q')}>F2</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[1R')}>F3</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[1S')}>F4</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[15~')}>F5</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[17~')}>F6</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[18~')}>F7</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[19~')}>F8</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[20~')}>F9</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[21~')}>F10</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[23~')}>F11</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[24~')}>F12</IconDialogButton>
                     </div>
                 }
 
@@ -372,17 +478,17 @@ const Terminal: VFC = () => {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[D')}><FaArrowLeft /></IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[A')}><FaArrowUp /></IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[B')}><FaArrowDown /></IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1b[C')}><FaArrowRight /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x1b[D')}><FaArrowLeft /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x1b[A')}><FaArrowUp /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x1b[B')}><FaArrowDown /></IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x1b[C')}><FaArrowRight /></IconDialogButton>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x03')}>^C</IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x04')}>^D</IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x12')}>^R</IconDialogButton>
-                <IconDialogButton onClick={() => wsRef.current?.send('\x1a')}>^Z</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x03')}>^C</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x04')}>^D</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x12')}>^R</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x1a')}>^Z</IconDialogButton>
               </div>
             </Focusable>
         }
