@@ -61,6 +61,10 @@ const Terminal: VFC = () => {
         throw new Error('xterm not initialized');
       }
 
+      console.log('Getting config...');
+      const localConfig = await getConfig()
+      console.log('Config received:', localConfig);
+
       // First open xterm if not already open
       if (!xterm.element) {
         if (!xtermDiv.current) {
@@ -70,10 +74,6 @@ const Terminal: VFC = () => {
         await xterm.open(xtermDiv.current);
         xterm.write('--- xterm test message ---\r\n');
       }
-
-      console.log('Getting config...');
-      const localConfig = await getConfig()
-      console.log('Config received:', localConfig);
 
       if (localConfig && xterm) {
         if (localConfig.__version__ === 1) {
@@ -88,6 +88,10 @@ const Terminal: VFC = () => {
             }
           }
         }
+
+        // The loading of the config will resize the terminal
+        // so we need to call fitToScreen again
+        fitToScreen();
       }
 
       console.log('Getting terminal...');
@@ -205,7 +209,10 @@ const Terminal: VFC = () => {
       //scrollback: 0,
       allowProposedApi: true,
       cursorBlink: true,
+
+      rows: 10,
     });
+
     console.log('XTermTerminal instance created');
     xtermRef.current = xterm;
   }, []);
@@ -308,8 +315,12 @@ const Terminal: VFC = () => {
         const fontSize = xterm.options.fontSize ?? 12;
         const colOffset = (Math.ceil(30 / fontSize));
         const newCols = isFullScreen ? res.cols - colOffset : res.cols + colOffset;
-        const newRows = isFullScreen ? res.rows - 1 : res.rows;
+        let newRows = isFullScreen ? res.rows - 1 : res.rows;
 
+        if (config?.extra_keys) {
+          newRows -= 3;
+        }
+        
         console.log('Resizing terminal:', {newCols, newRows, isFullScreen});
         xterm.resize(newCols, newRows);
       }
@@ -414,7 +425,7 @@ const Terminal: VFC = () => {
           <DialogButton style={{ visibility: 'hidden', zIndex: -10, position: 'absolute' }} onClick={setFocusToTerminal}></DialogButton> :
             <ModifiedTextField ref={fakeInputRef} disabled={config?.disable_virtual_keyboard ?? false} style={{ display: 'none' }} onClick={setFocusToTerminal} />
         }
-        <Focusable onClick={openKeyboard} style={{boxSizing: 'content-box'}}>
+        <Focusable onClick={openKeyboard} style={{boxSizing: 'content-box', overflow: 'hidden'}}>
           <div ref={xtermDiv} style={{ width: '100%', maxWidth: '100vw', margin: 0, background: '#000', padding: 0, height: "calc(100vh - "+getPadding()+")" }}></div>
         </Focusable>
 

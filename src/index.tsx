@@ -11,7 +11,7 @@ export default definePlugin(() => {
 
   return {
     name: "Decky Terminal",
-    titleView: <div className={staticClasses.Title}>Decky Terminal</div>,
+    title: <div className={staticClasses.Title}>Decky Terminal</div>,
     content: <SidePanel />,
     icon: <FaTerminal />,
     onDismount() {
