@@ -10,7 +10,7 @@ import {
 } from "@decky/ui";
 import { call, addEventListener, removeEventListener } from "@decky/api";
 import { VFC, useRef, useState, useEffect } from "react";
-import { Terminal as XTermTerminal } from '@xterm/xterm';
+import { IDisposable, Terminal as XTermTerminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import XTermCSS from "../common/xterm_css";
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaChevronCircleLeft, FaExpand, FaKeyboard, FaTerminal } from "react-icons/fa";
@@ -29,6 +29,8 @@ const Terminal: VFC = () => {
   const xtermDiv = useRef<HTMLDivElement | null>(null);
   const fakeInputRef = useRef<typeof TextField | null>(null);
   const eventListenerRef = useRef<Function | null>(null);
+
+  const xtermOnDataRef = useRef<IDisposable | null>(null);
 
   const sendInput = async (input: string) => {
     await call<[terminal_id: string, input: string], void>("send_terminal_input", id, input);
@@ -116,8 +118,14 @@ const Terminal: VFC = () => {
       });
 
       // Debug: Log when event handler is attached
+      console.log('Detaching onData handler if it exists...');
+      if (xtermOnDataRef.current) {
+        xtermOnDataRef.current.dispose();
+        xtermOnDataRef.current = null;
+      }
+
       console.log('Attaching onData handler...');
-      xterm.onData((data: string) => {
+      xtermOnDataRef.current = xterm.onData((data: string) => {
         console.log('xterm onData triggered:', data);
         sendInput(data);
       });
