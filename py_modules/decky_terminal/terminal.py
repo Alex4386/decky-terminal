@@ -115,6 +115,9 @@ class Terminal:
                 await Common._run_async(
                     fcntl.ioctl, self.slave_fd, termios.TIOCSWINSZ, new_size
                 )
+        except Exception as e:
+            # Windows?
+            pass
 
     # WORKERS ==============================================
     async def _process_subscriber(self):
@@ -125,6 +128,7 @@ class Terminal:
                     await self._write_stdin(self.stdin_buffer.popleft())
                 except Exception as e:
                     decky.logger.exception("[terminal][EXCEPTION][%s] Exception during process subscriber: %s", self.id, e)
+            
             try:
                 await asyncio.sleep(0)
             except:
