@@ -221,19 +221,24 @@ class Terminal:
 
     # OPTIMIZATION ==========================================
     def _detect_ansi_clear_and_remove_prepends(self, chars: bytes) -> bytes:
-        # List of screen-clearing ANSI sequences (add more as needed)
         clear_sequences = [
-            b"\x1b[2J",  # Clear screen
-            b"\x1b[H\x1b[2J",  # Move cursor home and clear screen
-            b"\x1b[3J",  # Clear scrollback
+            b"\x1b[H\x1b[2J",  # Cursor home + clear screen
+            b"\x1b[2J",        # Clear screen
+            b"\x1b[3J",        # Clear scrollback
         ]
 
+        last_index = -1
+        matched_seq = None
+
         for seq in clear_sequences:
-            idx = chars.find(seq)
-            if idx != -1:
-                # Screen clear sequence detected
-                self.buffer.clear()
-                return chars[idx:]  # Return from the clear sequence onward
+            idx = chars.rfind(seq)
+            if idx > last_index:
+                last_index = idx
+                matched_seq = seq
+
+        if last_index != -1:
+            self.buffer.clear()
+            return chars[last_index:]  # Return data from the last clear sequence
 
         return chars
 
