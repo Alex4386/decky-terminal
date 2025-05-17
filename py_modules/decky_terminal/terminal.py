@@ -1,6 +1,5 @@
 import asyncio
 import collections
-import fcntl
 import os
 import pty
 import signal
@@ -11,7 +10,6 @@ import uuid
 from typing import List
 
 from .common import Common
-
 
 class Terminal:
     id: str = str(uuid.uuid4())
@@ -104,17 +102,19 @@ class Terminal:
         self.rows = rows
         self.cols = cols
 
-        if self.master_fd is not None:
-            new_size = struct.pack("HHHH", rows, cols, 0, 0)
-            await Common._run_async(
-                fcntl.ioctl, self.master_fd, termios.TIOCSWINSZ, new_size
-            )
+        try:
+            import fcntl
+            if self.master_fd is not None:
+                new_size = struct.pack("HHHH", rows, cols, 0, 0)
+                await Common._run_async(
+                    fcntl.ioctl, self.master_fd, termios.TIOCSWINSZ, new_size
+                )
 
-        if self.slave_fd is not None:
-            new_size = struct.pack("HHHH", rows, cols, 0, 0)
-            await Common._run_async(
-                fcntl.ioctl, self.slave_fd, termios.TIOCSWINSZ, new_size
-            )
+            if self.slave_fd is not None:
+                new_size = struct.pack("HHHH", rows, cols, 0, 0)
+                await Common._run_async(
+                    fcntl.ioctl, self.slave_fd, termios.TIOCSWINSZ, new_size
+                )
 
     # WORKERS ==============================================
     async def _process_subscriber(self):
@@ -155,6 +155,18 @@ class Terminal:
             result["DISPLAY"] = ":0"
 
         return result
+    
+    def _handle_preexec_fn(self):
+        os.setsid()
+
+        # mark as interactive
+        try:
+            import fcntl
+            if self.slave_fd is not None:
+                fcntl.ioctl(self.slave_fd, termios.TIOCSCTTY, 0)
+        except Exception as e:
+            pass
+
 
     async def _start_process(self):
         self.master_fd, self.slave_fd = pty.openpty()
@@ -162,7 +174,7 @@ class Terminal:
         await self._change_pty_size(self.rows, self.cols)
         self.process = await asyncio.create_subprocess_exec(
             self.cmdline,
-            preexec_fn=os.setsid,
+            preexec_fn=self._handle_preexec_fn,
             stdout=self.slave_fd,
             stderr=self.slave_fd,
             stdin=self.slave_fd,
