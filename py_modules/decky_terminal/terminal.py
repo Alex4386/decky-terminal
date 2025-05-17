@@ -36,14 +36,15 @@ class Terminal:
     _title_cache: bytes = b""
 
     _optimize_clears: bool = True
+    _baud_rate: int = 38400
 
     def __init__(self, id: str, cmdline: str, is_shell: bool = True, **kwargs):
         self.id = id
         self.cmdline = cmdline  # TODO: maybe raise ValueError? cmdline can't meaningfully be None or undefined since it must be available for _start_process
 
         self.is_shell = is_shell
-        self.buffer = collections.deque([], maxlen=4096)
-        self.stdin_buffer = collections.deque([], maxlen=4096)
+        self.buffer = collections.deque([], maxlen=self._baud_rate)
+        self.stdin_buffer = collections.deque([], maxlen=self._baud_rate)
         self.is_subscribed = False
 
         self.flags = kwargs
