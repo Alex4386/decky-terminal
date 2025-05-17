@@ -35,6 +35,8 @@ class Terminal:
     title: str = ""
     _title_cache: bytes = b""
 
+    _optimize_clears: bool = True
+
     def __init__(self, id: str, cmdline: str, is_shell: bool = True, **kwargs):
         self.id = id
         self.cmdline = cmdline  # TODO: maybe raise ValueError? cmdline can't meaningfully be None or undefined since it must be available for _start_process
@@ -116,7 +118,7 @@ class Terminal:
                     fcntl.ioctl, self.slave_fd, termios.TIOCSWINSZ, new_size
                 )
         except Exception as e:
-            # Windows?
+            # Windows? Maybe not a tty?
             pass
 
     # WORKERS ==============================================
@@ -217,6 +219,24 @@ class Terminal:
     def _is_process_completed(self):
         return self._is_process_started() and self.process.returncode is not None
 
+    # OPTIMIZATION ==========================================
+    def _detect_ansi_clear_and_remove_prepends(self, chars: bytes) -> bytes:
+        # List of screen-clearing ANSI sequences (add more as needed)
+        clear_sequences = [
+            b"\x1b[2J",  # Clear screen
+            b"\x1b[H\x1b[2J",  # Move cursor home and clear screen
+            b"\x1b[3J",  # Clear scrollback
+        ]
+
+        for seq in clear_sequences:
+            idx = chars.find(seq)
+            if idx != -1:
+                # Screen clear sequence detected
+                self.buffer.clear()
+                return chars[idx:]  # Return from the clear sequence onward
+
+        return chars
+
     # PROCESS CONTROL =======================================
     async def _write_stdin(self, input: bytes):
         await Common._run_async(os.write, self.master_fd, input)
@@ -241,9 +261,13 @@ class Terminal:
             await asyncio.sleep(0)
 
     def _put_buffer(self, chars: bytes):
+        self._process_title(chars)
+
+        if self._optimize_clears:
+            chars = self._detect_ansi_clear_and_remove_prepends(chars)
+        
         for i in chars:
             self.buffer.append(i)
-        self._process_title(chars)
 
     def _process_title(self, chars: bytes):
         try:
