@@ -133,7 +133,7 @@ class Terminal:
                     decky.logger.exception("[terminal][EXCEPTION][%s] Exception during process subscriber: %s", self.id, e)
             
             try:
-                await asyncio.sleep(0)
+                await asyncio.sleep(0.01)
             except:
                 pass
 
@@ -264,7 +264,9 @@ class Terminal:
                 decky.logger.exception("[terminal][EXCEPTION][%s] Exception during output read: %s", self.id, e)
                 pass
 
-            await asyncio.sleep(0)
+            # Workaround for yielding to the event loop
+            # TODO: properly implement a more efficient way to broadcast output via event driven mechanism
+            await asyncio.sleep(0.01)
 
     def _put_buffer(self, chars: bytes):
         self._process_title(chars)
