@@ -141,8 +141,10 @@ class Terminal:
     def get_terminal_env(self):
         result = dict(os.environ)
 
-        # Disable Steam internal library paths since it interferes with applications.
-        # TODO: Add option to enable Steam-internal libraries
+        # Due to hotfix on v3.1.10's hotfix,
+        # using LD_LIBRARY_PATH is no longer a supported configuration.
+        #
+        # https://github.com/SteamDeckHomebrew/decky-loader/releases/tag/v3.1.10
         if "LD_LIBRARY_PATH" in result:
             del result["LD_LIBRARY_PATH"]
 
