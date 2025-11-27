@@ -452,52 +452,66 @@ const Terminal: VFC = () => {
         </Focusable>
 
         {
-          (config?.extra_keys && (!fullScreen || config?.handheld_mode)) && 
+          (config?.extra_keys && (!fullScreen || config?.handheld_mode)) &&
             <Focusable style={{ overflowX: 'scroll', display: 'flex', gap: '1rem', padding: '.5rem', width: 'fit-content', maxWidth: 'calc(100% - 2rem)', margin: '0 auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem' }}>
-                <IconDialogButton onClick={() => sendInput('')}>Esc</IconDialogButton>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
-                {
-                  openFunctionRow &&
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: '.25rem'}}>
-                      <IconDialogButton onClick={() => sendInput('\x1b[1P')}>F1</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[1Q')}>F2</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[1R')}>F3</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[1S')}>F4</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[15~')}>F5</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[17~')}>F6</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[18~')}>F7</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[19~')}>F8</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[20~')}>F9</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[21~')}>F10</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[23~')}>F11</IconDialogButton>
-                      <IconDialogButton onClick={() => sendInput('\x1b[24~')}>F12</IconDialogButton>
+              {
+                config?.custom_keys_enabled && Array.isArray(config?.custom_keys) ? (
+                  // Custom keys mode: render user-defined keys from config
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+                    {config.custom_keys.map((key: { label: string; sequence: string }, index: number) => (
+                      <IconDialogButton key={index} onClick={() => sendInput(key.sequence)}>{key.label}</IconDialogButton>
+                    ))}
+                  </div>
+                ) : (
+                  // Default extra keys mode
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem' }}>
+                      <IconDialogButton onClick={() => sendInput('\x1b')}>Esc</IconDialogButton>
                     </div>
-                }
 
-                {
-                  openFunctionRow ? 
-                  <IconDialogButton onClick={() => setOpenFunctionRow(false)}><FaChevronCircleLeft /></IconDialogButton> :
-                  <IconDialogButton onClick={() => setOpenFunctionRow(true)}>Fn</IconDialogButton>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
+                      {
+                        openFunctionRow &&
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '.25rem'}}>
+                            <IconDialogButton onClick={() => sendInput('\x1b[1P')}>F1</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[1Q')}>F2</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[1R')}>F3</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[1S')}>F4</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[15~')}>F5</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[17~')}>F6</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[18~')}>F7</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[19~')}>F8</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[20~')}>F9</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[21~')}>F10</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[23~')}>F11</IconDialogButton>
+                            <IconDialogButton onClick={() => sendInput('\x1b[24~')}>F12</IconDialogButton>
+                          </div>
+                      }
 
-                }
-              </div>
+                      {
+                        openFunctionRow ?
+                        <IconDialogButton onClick={() => setOpenFunctionRow(false)}><FaChevronCircleLeft /></IconDialogButton> :
+                        <IconDialogButton onClick={() => setOpenFunctionRow(true)}>Fn</IconDialogButton>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
-                <IconDialogButton onClick={() => sendInput('\x1b[D')}><FaArrowLeft /></IconDialogButton>
-                <IconDialogButton onClick={() => sendInput('\x1b[A')}><FaArrowUp /></IconDialogButton>
-                <IconDialogButton onClick={() => sendInput('\x1b[B')}><FaArrowDown /></IconDialogButton>
-                <IconDialogButton onClick={() => sendInput('\x1b[C')}><FaArrowRight /></IconDialogButton>
-              </div>
+                      }
+                    </div>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
-                <IconDialogButton onClick={() => sendInput('\x03')}>^C</IconDialogButton>
-                <IconDialogButton onClick={() => sendInput('\x04')}>^D</IconDialogButton>
-                <IconDialogButton onClick={() => sendInput('\x12')}>^R</IconDialogButton>
-                <IconDialogButton onClick={() => sendInput('\x1a')}>^Z</IconDialogButton>
-              </div>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
+                      <IconDialogButton onClick={() => sendInput('\x1b[D')}><FaArrowLeft /></IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[A')}><FaArrowUp /></IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[B')}><FaArrowDown /></IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1b[C')}><FaArrowRight /></IconDialogButton>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
+                      <IconDialogButton onClick={() => sendInput('\x03')}>^C</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x04')}>^D</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x12')}>^R</IconDialogButton>
+                      <IconDialogButton onClick={() => sendInput('\x1a')}>^Z</IconDialogButton>
+                    </div>
+                  </>
+                )
+              }
             </Focusable>
         }
 

@@ -78,6 +78,12 @@ const SettingsPage: VFC = () => {
         })
     }
 
+    const setCustomKeys = async (enabled: boolean) => {
+        await appendConfig({
+            custom_keys_enabled: enabled,
+        })
+    }
+
     const setUseDisplay = async (enabled: boolean) => {
         await appendConfig({
             use_display: enabled,
@@ -189,6 +195,20 @@ const SettingsPage: VFC = () => {
                         disabled={false}
                         checked={config?.extra_keys ?? false}
                         onChange={(e) => {setExtraKeys(e)}}
+                        bottomSeparator={"none"} />
+                </div>
+            </Focusable>
+            <Focusable
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                    <div className={staticClasses.Text}>Use Custom Keys</div>
+                    <div className={staticClasses.Label}>Replace default extra keys with custom keys from config.json</div>
+                </div>
+                <div style={{ minWidth: '200px' }}>
+                    <ToggleField
+                        disabled={!config?.extra_keys}
+                        checked={config?.custom_keys_enabled ?? false}
+                        onChange={(e) => {setCustomKeys(e)}}
                         bottomSeparator={"none"} />
                 </div>
             </Focusable>
