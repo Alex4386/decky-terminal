@@ -16,6 +16,23 @@ import XTermCSS from "../common/xterm_css";
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaChevronCircleLeft, FaExpand, FaKeyboard, FaTerminal } from "react-icons/fa";
 import { IconDialogButton } from "../common/components";
 
+// Quote font names (e.g. "FantasqueSansM Nerd Font") so they are valid CSS,
+// and always fall back to a monospace font instead of a proportional one.
+const buildFontFamily = (input: string): string => {
+  const families = input
+    .split(',')
+    .map((name) => name.trim().replace(/^(["'])(.*)\1$/, '$2').trim())
+    .filter((name) => name.length > 0);
+
+  if (!families.includes('monospace')) {
+    families.push('monospace');
+  }
+
+  return families
+    .map((name) => name === 'monospace' ? name : `"${name.replace(/"/g, '\\"')}"`)
+    .join(', ');
+};
+
 const Terminal: VFC = () => {
   const { id } = useParams() as any;
   const [loaded, setLoaded] = useState(false);
@@ -102,7 +119,16 @@ const Terminal: VFC = () => {
       if (localConfig && xterm) {
         if (localConfig.__version__ === 1) {
           if (localConfig.font_family?.trim()) {
-            xterm.options.fontFamily = localConfig.font_family;
+            const fontFamily = buildFontFamily(localConfig.font_family);
+
+            // Make sure the font is loaded before xterm measures glyph widths
+            try {
+              await document.fonts.load(`${xterm.options.fontSize ?? 15}px ${fontFamily}`);
+            } catch (e) {
+              console.error('font load failed', e);
+            }
+
+            xterm.options.fontFamily = fontFamily;
           }
 
           if (localConfig.font_size) {
