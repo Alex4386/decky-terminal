@@ -37,6 +37,28 @@ const Terminal: VFC = () => {
     console.log('sending Input:', input);
   };
 
+  // Skipping xterm's handling of Ctrl+V lets the browser fire a native paste
+  // event, which xterm handles itself. If that never arrives (e.g. a synthesized
+  // keystroke), fall back to reading the clipboard directly.
+  const pasteFromClipboard = (xterm: XTermTerminal) => {
+    const textarea = xterm.textarea;
+    let pasted = false;
+    const onPaste = () => { pasted = true; };
+    textarea?.addEventListener('paste', onPaste, { once: true });
+
+    setTimeout(async () => {
+      textarea?.removeEventListener('paste', onPaste);
+      if (pasted) return;
+
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) xterm.paste(text);
+      } catch (e) {
+        console.error('clipboard read failed', e);
+      }
+    }, 100);
+  };
+
   const wrappedConnectIO = async () => {
     try {
       await connectIO()
@@ -130,6 +152,19 @@ const Terminal: VFC = () => {
         sendInput(data);
       });
       console.log('onData handler attached');
+
+      // Steam's on-screen keyboard "Paste" button sends Ctrl+V,
+      // which xterm.js would otherwise swallow and send as ^V (0x16).
+      xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+        if (localConfig?.disable_ctrl_v_paste) return true;
+
+        if (e.type === 'keydown' && e.ctrlKey && !e.altKey && !e.metaKey && e.key.toLowerCase() === 'v') {
+          pasteFromClipboard(xterm);
+          return false;
+        }
+
+        return true;
+      });
 
       // Set up event listener for terminal output first
       const unsubscribe = addEventListener<[string]>(`terminal_output#${id}`, function terminalOutput(data) {
