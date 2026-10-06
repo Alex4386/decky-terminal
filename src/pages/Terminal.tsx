@@ -516,7 +516,7 @@ const Terminal: VFC = () => {
           (config?.extra_keys && (!fullScreen || config?.handheld_mode)) && 
             <Focusable style={{ overflowX: 'scroll', display: 'flex', gap: '1rem', padding: '.5rem', width: 'fit-content', maxWidth: 'calc(100% - 2rem)', margin: '0 auto' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem' }}>
-                <IconDialogButton onClick={() => sendInput('')}>Esc</IconDialogButton>
+                <IconDialogButton onClick={() => sendInput('\x1b')}>Esc</IconDialogButton>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
