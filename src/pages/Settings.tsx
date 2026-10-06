@@ -4,6 +4,7 @@ import {
 import { VFC } from "react";
 import AcknowledgementPage from "./settings/AcknowledgementPage";
 import SettingsPage from "./settings/SettingsPage";
+import ExtraKeysPage from "./settings/ExtraKeysPage";
 
 
 const Settings: VFC = () => {
@@ -15,6 +16,10 @@ const Settings: VFC = () => {
         {
           title: "Settings",
           content: <SettingsPage />
+        },
+        {
+          title: "Extra Keys",
+          content: <ExtraKeysPage />
         },
         {
           title: "Acknowledgement",

@@ -15,6 +15,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import XTermCSS from "../common/xterm_css";
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp, FaChevronCircleLeft, FaExpand, FaKeyboard, FaTerminal } from "react-icons/fa";
 import { IconDialogButton } from "../common/components";
+import { Modifiers, applyModifiers, decodeKeySequence, parseCustomKeys } from "../common/keys";
 
 // Quote font names (e.g. "FantasqueSansM Nerd Font") so they are valid CSS,
 // and always fall back to a monospace font instead of a proportional one.
@@ -40,6 +41,9 @@ const Terminal: VFC = () => {
   const [title, setTitle] = useState<string | null>(null);
   const [config, setConfig] = useState<Record<string, any> | null>(null);
   const [openFunctionRow, setOpenFunctionRow] = useState<boolean>(false);
+  const [modifiers, setModifiers] = useState<Modifiers>({ ctrl: false, alt: false });
+  // onData handler is attached once, so it reads modifiers through a ref
+  const modifiersRef = useRef<Modifiers>(modifiers);
 
   // Create a ref to hold the xterm instance
   const xtermRef = useRef<XTermTerminal | null>(null);
@@ -175,6 +179,14 @@ const Terminal: VFC = () => {
       console.log('Attaching onData handler...');
       xtermOnDataRef.current = xterm.onData((data: string) => {
         console.log('xterm onData triggered:', data);
+        const current = modifiersRef.current;
+        if (current.ctrl || current.alt) {
+          // modifiers are one-shot: release them after the next input
+          updateModifiers({ ctrl: false, alt: false });
+          sendInput(applyModifiers(data, current));
+          return;
+        }
+
         sendInput(data);
       });
       console.log('onData handler attached');
@@ -371,6 +383,16 @@ const Terminal: VFC = () => {
     }
   }
 
+  const updateModifiers = (next: Modifiers) => {
+    modifiersRef.current = next;
+    setModifiers(next);
+  };
+
+  const toggleModifier = (key: keyof Modifiers) => {
+    updateModifiers({ ...modifiersRef.current, [key]: !modifiersRef.current[key] });
+    setFocusToTerminal();
+  };
+
   const setFocusToTerminal = () => {
     setTimeout(() => {
       xtermRef.current?.focus()
@@ -559,6 +581,32 @@ const Terminal: VFC = () => {
                 <IconDialogButton onClick={() => sendInput('\x12')}>^R</IconDialogButton>
                 <IconDialogButton onClick={() => sendInput('\x1a')}>^Z</IconDialogButton>
               </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
+                <IconDialogButton
+                  onClick={() => toggleModifier('ctrl')}
+                  style={modifiers.ctrl ? { background: 'white', color: 'black' } : undefined}
+                >Ctrl</IconDialogButton>
+                <IconDialogButton
+                  onClick={() => toggleModifier('alt')}
+                  style={modifiers.alt ? { background: 'white', color: 'black' } : undefined}
+                >Alt</IconDialogButton>
+              </div>
+
+              {
+                parseCustomKeys(config?.custom_keys).length > 0 &&
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem'}}>
+                    {
+                      parseCustomKeys(config?.custom_keys).map((key, idx) =>
+                        <IconDialogButton
+                          key={idx}
+                          onClick={() => sendInput(decodeKeySequence(key.send))}
+                          style={{ width: 'auto', minWidth: '50px', whiteSpace: 'nowrap' }}
+                        >{key.label}</IconDialogButton>
+                      )
+                    }
+                  </div>
+              }
             </Focusable>
         }
 

@@ -188,7 +188,7 @@ const SettingsPage: VFC = () => {
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                 <div>
                     <div className={staticClasses.Text}>Enable Extra keys</div>
-                    <div className={staticClasses.Label}>Add a row for arrow keys and Ctrl+C,D,Z</div>
+                    <div className={staticClasses.Label}>Add a row for arrow keys, Ctrl+C,D,Z, modifiers and custom keys</div>
                 </div>
                 <div style={{ minWidth: '200px' }}>
                     <ToggleField
